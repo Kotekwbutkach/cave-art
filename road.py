@@ -1,7 +1,7 @@
 import copy
 from typing import List
-from vehicle import Vehicle
-from data_structures import VehicleData, RoadData
+from vehicle import Vehicle, get_vehicles
+from data_structures import RoadData
 
 
 class Road:
@@ -46,13 +46,12 @@ class Road:
         if self.vehicles:
             vehicle.vehicle_before = self.vehicles[-1]
         self.vehicles.append(vehicle)
-        self.data.add_vehicle_data(VehicleData(vehicle))
+        self.data.add_vehicle(vehicle)
 
-    def add_vehicles(self, vehicle: Vehicle, num: int, starting_distance):
-        for i in range(num):
-            vehicle_copy = copy.deepcopy(vehicle)
-            vehicle_copy.transform.position += starting_distance * (num-1-i)
-            self.add_vehicle(vehicle_copy)
+    def add_vehicles(self, name: str, arglist: list):
+        generator = get_vehicles(name, arglist)
+        for v in generator:
+            self.add_vehicle(v)
 
     def remove_vehicles(self, i: int):
         self.vehicles = self.vehicles[i:]
@@ -75,4 +74,4 @@ class CircleRoad(Road):
         else:
             vehicle.vehicle_before = vehicle
         self.vehicles.append(vehicle)
-        self.data.add_vehicle_data(VehicleData(vehicle))
+        self.data.add_vehicle(vehicle)

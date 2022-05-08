@@ -58,7 +58,7 @@ class VisibleRoad:
         clock = pygame.time.Clock()
         pygame.init()
         t = 0
-        fps = self.sps / delta_time
+        fps = int(self.sps // delta_time)
         while running:
 
             for event in pygame.event.get():
@@ -69,13 +69,13 @@ class VisibleRoad:
                 self.road.simulate_step(delta_time)
                 self.draw_road()
                 pygame.display.flip()
-                clock.tick()
+                clock.tick(fps)
                 t += 1
         pygame.quit()
         self.screen = pygame.display.set_mode([self.screen_width, self.screen_height])
 
 
-class VisibleRoundRoad(VisibleRoad):
+class VisibleCircleRoad(VisibleRoad):
     def draw_car(self, position: Tuple[float, float], color):
         radius = position[0]
         angle = position[1]
