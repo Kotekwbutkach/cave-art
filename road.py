@@ -1,6 +1,5 @@
-import copy
-from typing import List
-from vehicle import Vehicle, get_vehicles
+from typing import Dict, List
+from vehicle import Vehicle, produce_vehicles
 from data_structures import RoadData
 
 
@@ -16,24 +15,26 @@ class Road:
 
         if vehicles is None:
             vehicles = list()
-        else:
-            vehicles[0].vehicle_before = None
-            for i in range(1, len(vehicles)):
-                vehicles[i].vehicle_before = vehicles[i-1]
         self.vehicles = vehicles
+        self.update_views()
 
         if data is None:
             data = RoadData()
         self.data = data
 
+    def update_views(self):
+        for i, v in enumerate(self.vehicles):
+            if v.view.awareness is None:
+                v.view.input_data = [v.history for v in self.vehicles[:i]]
+            else:
+                v.view.input_data = [v.history for v in self.vehicles[max(0, i-v.view.awareness):i]]
+
     def simulate_step(self, time_delta: float):
-        self.vehicles[0].simulate_step(time_delta)
         to_remove = 0
-        for i in range(1, len(self.vehicles)):
-            self.vehicles[i].simulate_step(time_delta)
-            if self.vehicles[i].transform.position > self.length:
+        for vehicle in self.vehicles:
+            vehicle.simulate_step(time_delta)
+            if vehicle.physics.transform.position > self.length:
                 to_remove += 1
-        self.data.update()
         if to_remove > 0:
             self.remove_vehicles(to_remove)
         self.age += 1
@@ -43,35 +44,39 @@ class Road:
             self.simulate_step(time_delta)
 
     def add_vehicle(self, vehicle: Vehicle):
-        if self.vehicles:
-            vehicle.vehicle_before = self.vehicles[-1]
         self.vehicles.append(vehicle)
         self.data.add_vehicle(vehicle)
+        self.update_views()
 
-    def add_vehicles(self, name: str, arglist: list):
-        generator = get_vehicles(name, arglist)
+    def add_vehicles(self, controller_name: str, view_name, arglist: List[Dict]):
+        generator = produce_vehicles(controller_name, view_name, arglist)
         for v in generator:
             self.add_vehicle(v)
 
-    def remove_vehicles(self, i: int):
-        self.vehicles = self.vehicles[i:]
-        self.vehicles[0].vehicle_before = None
+    def remove_vehicles(self, n: int):
+        self.vehicles = self.vehicles[n:]
+        self.update_views()
 
 
 class CircleRoad(Road):
-
     def simulate_step(self, time_delta: float):
-        self.vehicles[0].simulate_step(time_delta, self.length)
-        for i in range(1, len(self.vehicles)):
-            self.vehicles[i].simulate_step(time_delta, self.length)
-        self.data.update()
+        for vehicle in self.vehicles:
+            vehicle.simulate_step(time_delta)
+            if vehicle.physics.transform.position > self.length:
+                vehicle.physics.transform.position -= self.length
         self.age += 1
 
     def add_vehicle(self, vehicle: Vehicle):
-        if self.vehicles:
-            vehicle.vehicle_before = self.vehicles[-1]
-            self.vehicles[0].vehicle_before = vehicle
-        else:
-            vehicle.vehicle_before = vehicle
+        vehicle.view.modulo = self.length
         self.vehicles.append(vehicle)
         self.data.add_vehicle(vehicle)
+        self.update_views()
+
+    def update_views(self):
+        for i, v in enumerate(self.vehicles):
+            if v.view.awareness is None:
+                v.view.input_data = [v.history for v in self.vehicles[i+1:] + self.vehicles[:i]]
+            else:
+                input_data = self.vehicles[i+1:] + self.vehicles[:i]
+                n = len(input_data)
+                v.view.input_data = [v.history for v in input_data[n - 1 - v.view.awareness:]]

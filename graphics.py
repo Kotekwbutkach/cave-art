@@ -1,7 +1,7 @@
 import pygame
 import math
-from typing import Tuple
 from road import Road
+from data_structures import Transform
 
 
 def get_color(c: int):
@@ -15,8 +15,6 @@ class VisibleRoad:
     screen_width: int
     screen_height: int
     road_width: int
-    car_width: int
-    car_length: int
     sps: float
     screen: pygame.Surface
 
@@ -24,25 +22,24 @@ class VisibleRoad:
                  road: Road,
                  screen_width=300,
                  screen_height=500,
-                 road_width=20,
-                 car_width=10,
-                 car_length=20,
+                 road_width=10,
                  sps=1):
         self.road = road
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.road_width = road_width
-        self.car_width = car_width
-        self.car_length = car_length
         self.sps = sps
         self.screen = pygame.display.set_mode([screen_width, screen_height])
 
-    def draw_car(self, position: Tuple[float, float], color):
-        size = self.car_width, self.car_length
-        rect = pygame.Rect([position[0] - size[0] / 2,
-                            position[1] - size[1] / 2,
-                            size[0],
-                            size[1]])
+    def draw_car(self, transform: Transform, color):
+        y_position = transform.position / self.road.length * self.screen_height
+        position = (self.screen_width//2, y_position)
+        car_length = 2000 * transform.length / self.road.length * self.screen_height
+        car_width = car_length/2
+        rect = pygame.Rect([position[0] - car_width/2,
+                            position[1] - car_length,
+                            car_width,
+                            car_length])
         pygame.draw.rect(self.screen, color, rect)
 
     def draw_road(self):
@@ -50,10 +47,9 @@ class VisibleRoad:
                          (self.screen_width // 2 - self.road_width // 2, 0,
                           self.road_width, self.screen_height))
         for i, vehicle in enumerate(self.road.vehicles):
-            y_position = vehicle.transform.position/self.road.length * self.screen_height
-            self.draw_car((self.screen_width//2, self.screen_height - y_position), get_color(i))
+            self.draw_car(vehicle.physics.transform, get_color(i))
 
-    def simulate(self, delta_time: float, time_steps: int):
+    def simulate(self, delta_time: float, time_steps: int, autosave: int = 0):
         running = True
         clock = pygame.time.Clock()
         pygame.init()
@@ -69,6 +65,14 @@ class VisibleRoad:
                 self.road.simulate_step(delta_time)
                 self.draw_road()
                 pygame.display.flip()
+                n = len(self.road.vehicles) - 1
+                for i in range(self.road.vehicles[0].view.awareness):
+                    print(f"Vehicle {i+1}/{0}: {self.road.vehicles[0].view.get_information(delta_time)[i+1]}")
+                for i in range(self.road.vehicles[n].view.awareness):
+                    print(f"Vehicle {i+1}/{n}: {self.road.vehicles[n].view.get_information(delta_time)[i+1]}")
+                if autosave > 0 and t % autosave == 0:
+                    self.road.data.save_to_csv()
+
                 clock.tick(fps)
                 t += 1
         pygame.quit()
@@ -76,23 +80,36 @@ class VisibleRoad:
 
 
 class VisibleCircleRoad(VisibleRoad):
-    def draw_car(self, position: Tuple[float, float], color):
-        radius = position[0]
-        angle = position[1]
-        center_x = self.screen_width // 2 + radius * math.cos(angle)
-        center_y = self.screen_height // 2 + radius * math.sin(angle)
-        width_diff_x, width_diff_y = self.car_width/2 * math.cos(angle), self.car_width/2 * math.sin(angle)
-        length_diff_x, length_diff_y = self.car_length/2 * math.sin(angle), - self.car_length/2 * math.cos(angle)
+    radius: float
+
+    def __init__(self,
+                 road: Road,
+                 screen_width=300,
+                 screen_height=500,
+                 road_width=10,
+                 sps=1,
+                 radius=None):
+        super(VisibleCircleRoad, self).__init__(road, screen_width, screen_height, road_width, sps)
+
+        if radius is None:
+            self.radius = self.road.length/self.road_width
+        else:
+            self.radius = radius
+
+    def draw_car(self, transform: Transform, color):
+        angle = 2 * transform.position/self.road.length * math.pi
+        car_length = 2000 * transform.length/self.road.length
+        car_width = car_length/2
+        center_x = self.screen_width // 2 + self.radius * math.cos(angle)
+        center_y = self.screen_height // 2 + self.radius * math.sin(angle)
+        width_diff_x, width_diff_y = car_width/2 * math.cos(angle), car_width/2 * math.sin(angle)
+        length_diff_x, length_diff_y = car_length/2 * math.sin(angle), - car_length/2 * math.cos(angle)
         corners = [[center_x + a * width_diff_x + b * length_diff_x, center_y + a * width_diff_y + b * length_diff_y]
                    for a, b in [(1, 1), (1, -1), (-1, -1), (-1, 1)]]
         pygame.draw.polygon(self.screen, color, corners)
 
     def draw_road(self):
-        radius = 3.5*self.road_width
         pygame.draw.circle(self.screen, (100, 100, 100), (self.screen_width // 2, self.screen_height // 2),
-                           radius + self.road_width/2, self.road_width)
+                           self.radius + self.road_width/2, self.road_width)
         for i, vehicle in enumerate(self.road.vehicles):
-            angle = 2 * vehicle.transform.position/self.road.length * math.pi
-            self.draw_car((radius, angle), get_color(i))
-
-
+            self.draw_car(vehicle.physics.transform, get_color(i))

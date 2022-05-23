@@ -1,34 +1,26 @@
 from road import CircleRoad
 from graphics import VisibleCircleRoad
-"""
-road = CircleRoad(15.)
-visibleRoad = VisibleCircleRoad(road, sps=20)
 
-road.add_vehicles("IDV", [{"position": 2.5 - x/2,
-                           "velocity": 0,
-                           "acceleration": 0,
-                           "max_velocity": 5,
-                           "max_acceleration": 2,
-                           "minimum_distance": .1,
-                           "headway_time": .5,
-                           "comfortable_deceleration": 0.5} for x in range(5)])
-visibleRoad.simulate(0.01, 10000)
-road.data.show_plot(0, road.age)
-"""
-road = CircleRoad(15.)
+
+road = CircleRoad(1000.)
 visibleRoad = VisibleCircleRoad(road, sps=40)
 
-road.add_vehicles("HDV", [{"position": 2.5 - x/2,
-                           "velocity": 0,
-                           "acceleration": 0,
-                           "max_velocity": 25,
-                           "max_acceleration": 2,
-                           "minimum_distance": .1,
-                           "headway_time": .5,
-                           "comfortable_deceleration": 0.5,
-                           "reaction_time": 0.1,
-                           "variation_coefficient": 0,
-                           "average_estimation_error": 1,
-                           "correlation_times": 1} for x in range(5)])
-visibleRoad.simulate(0.001, 20000)
-road.data.show_plot(0, road.age)
+road.add_vehicles("IntelligentDriverController",
+                  "HumanDriverView",
+                  [{"position": 1000 - 40*x,
+                    "velocity": 0,
+                    "acceleration": 0,
+                    "length": 5,
+                    "awareness": 5,
+                    "max_velocity": 20,
+                    "max_acceleration": 1,
+                    "minimum_distance": 2,
+                    "headway_time": .5,
+                    "comfortable_deceleration": 1.5,
+                    "reaction_time": .1,
+                    "variation_coefficient": 0.1,
+                    "average_estimation_error_inverse": 0.01,
+                    "correlation_times": 200}
+                   for x in range(20)])
+visibleRoad.simulate(0.1, 5000, autosave=2836)
+road.data.show_plots(0, road.age)
