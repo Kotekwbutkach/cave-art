@@ -32,7 +32,7 @@ class Transform:
                          self.length)
 
     def __mul__(self, scale: float):
-        return Transform(scale * self.position, scale * self.velocity, scale * self.acceleration, scale * self.length)
+        return Transform(scale * self.position, scale * self.velocity, scale * self.acceleration, self.length)
 
     def distance(self, other, modulo: float = None):
         dist = other.position - other.length - self.position

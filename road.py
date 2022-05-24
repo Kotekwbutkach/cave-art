@@ -8,8 +8,9 @@ class Road:
     age: int
     vehicles: List[Vehicle]
     data: RoadData
+    debug: bool
 
-    def __init__(self, length: float, vehicles: List[Vehicle] = None, data: RoadData = None):
+    def __init__(self, length: float, vehicles: List[Vehicle] = None, data: RoadData = None, debug: bool = False):
         self.length = length
         self.age = 0
 
@@ -21,6 +22,8 @@ class Road:
         if data is None:
             data = RoadData()
         self.data = data
+
+        self.debug = debug
 
     def update_views(self):
         for i, v in enumerate(self.vehicles):
@@ -62,8 +65,9 @@ class CircleRoad(Road):
     def simulate_step(self, time_delta: float):
         for vehicle in self.vehicles:
             vehicle.simulate_step(time_delta)
-            if vehicle.physics.transform.position > self.length:
-                vehicle.physics.transform.position -= self.length
+            if vehicle.physics.transform.position > self.length or vehicle.physics.transform.position < 0:
+                vehicle.physics.transform.position = vehicle.physics.transform.position % self.length
+            vehicle.update_history()
         self.age += 1
 
     def add_vehicle(self, vehicle: Vehicle):
@@ -75,8 +79,23 @@ class CircleRoad(Road):
     def update_views(self):
         for i, v in enumerate(self.vehicles):
             if v.view.awareness is None:
-                v.view.input_data = [v.history for v in self.vehicles[i+1:] + self.vehicles[:i]]
+                v.view.input_data = [v.history for v in self.vehicles[i + 1:] + self.vehicles[:i]]
+
+                if self.debug:
+                    print(f"{v.id} (awareness: {v.view.awareness:}) is now following", end="")
+                    for other in self.vehicles[i + 1:] + self.vehicles[:i]:
+                        print(f" {other.id}", end=",")
+                    print()
+
             else:
                 input_data = self.vehicles[i+1:] + self.vehicles[:i]
                 n = len(input_data)
+                start = max(n - v.view.awareness, 0)
                 v.view.input_data = [v.history for v in input_data[n - 1 - v.view.awareness:]]
+
+                if self.debug:
+                    print(f"{v.id} (awareness: {v.view.awareness:}) is now following", end="")
+                    for other in input_data[start:]:
+                        print(f" {other.id}", end=",")
+                    print()
+

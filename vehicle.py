@@ -6,15 +6,18 @@ from typing import List, Dict
 
 
 class Vehicle:
+    CURRENT_ID = 0
+    id: int
     physics: Physics
     view: View
     controller: Controller
 
     def __init__(self, physics: Physics, controller: Controller, view: View):
+        self.id = Vehicle.CURRENT_ID
+        Vehicle.CURRENT_ID += 1
         self.physics = physics
         self.controller = controller
         self.view = view
-
         self.history = TransformData(self.physics.transform)
         self.view.own_data = self.history
 
@@ -23,6 +26,8 @@ class Vehicle:
         self.controller.update_information(information)
         acceleration_function = self.controller.acceleration_function()
         self.physics.simulate_step(acceleration_function, delta_time)
+
+    def update_history(self):
         self.history.update()
 
 
@@ -37,7 +42,7 @@ def vehicle_factory(controller_name, view_name):
                 controller = IntelligentDriverController(**arglist[i])
             else:
                 controller = Controller()
-            if view_name == "HumanDriverView":
+            if view_name == "IntelligentDriverView":
                 view = IntelligentDriverView(**arglist[i])
             elif view_name == "HumanDriverView":
                 view = HumanDriverView(**arglist[i])

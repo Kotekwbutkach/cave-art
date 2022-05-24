@@ -57,12 +57,34 @@ class IntelligentDriverView(View):
 
         self.input_data = self.input_data[:awareness]
 
+    def measurement_time(self, delta_time):
+        time = len(self.own_data) - 1 - (self.reaction_time / delta_time)
+        return time
+
+    def predict_distance(self, transform_data, delta_time):
+        time = self.measurement_time(delta_time)
+        distance = (transform_data[time] - self.own_data[time]).position - transform_data.length -\
+            self.reaction_time * (transform_data[time] - self.own_data[time]).velocity
+        return distance
+
+    def predict_velocity(self, delta_time):
+        time = self.measurement_time(delta_time)
+        velocity = self.own_data[time].velocity + self.reaction_time * self.own_data[time].acceleration
+        return velocity
+
+    def predict_velocity_difference(self, transform_data, delta_time):
+        time = self.measurement_time(delta_time)
+        return (transform_data[time] - self.own_data[time]).velocity
+
     def get_information(self, delta_time) -> List[TransformData]:
-        time = len(self.own_data) - 1 - (self.reaction_time/delta_time)
-        data = [self.own_data[time]]
+        time = self.measurement_time(delta_time)
+        own_data = self.own_data[time]
+        own_data.velocity = self.predict_velocity(delta_time)
+        data = [own_data]
         for transform_data in self.input_data:
             new_entry = transform_data[time] - self.own_data[time]
-            new_entry.position -= new_entry.length
+            new_entry.position = self.predict_distance(transform_data, delta_time) - new_entry.length
+            new_entry.velocity = self.predict_velocity_difference(transform_data, delta_time)
             if self.modulo is not None:
                 new_entry.position = new_entry.position % self.modulo
             data = data + [new_entry]
@@ -93,7 +115,7 @@ class HumanDriverView(IntelligentDriverView):
         return time
 
     def estimate_distance(self, transform_data, time):
-        distance = (transform_data[time] - self.own_data[time]).position
+        distance = (transform_data[time] - self.own_data[time]).position - transform_data.length
         return distance * math.exp(self.variation_coefficient * self.distance_process.value)
 
     def estimate_velocity_difference(self, transform_data, time):
@@ -115,17 +137,3 @@ class HumanDriverView(IntelligentDriverView):
     def predict_velocity_difference(self, transform_data, delta_time):
         time = self.measurement_time(delta_time)
         return self.estimate_velocity_difference(transform_data, time)
-
-    def get_information(self, delta_time) -> List[TransformData]:
-        time = self.measurement_time(delta_time)
-        own_data = self.own_data[time]
-        own_data.velocity = self.predict_velocity(delta_time)
-        data = [self.own_data[time]]
-        for transform_data in self.input_data:
-            new_entry = transform_data[time] - self.own_data[time]
-            new_entry.position = self.predict_distance(transform_data, delta_time) - new_entry.length
-            new_entry.velocity = self.predict_velocity_difference(transform_data, delta_time)
-            if self.modulo is not None:
-                new_entry.position = new_entry.position % self.modulo
-            data = data + [new_entry]
-        return data

@@ -69,7 +69,7 @@ class IntelligentDriverController(Controller):
     def acceleration_function(self) -> Callable:
         def acceleration():
             a = self.free_acceleration()
-            for vehicle_id in range(1, len(self.information)):
+            for vehicle_id in range(1, len(self.information)-1):
                 a += self.braking_interaction(vehicle_id)
             return a
         return acceleration

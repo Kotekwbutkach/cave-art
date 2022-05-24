@@ -4,10 +4,24 @@ from road import Road
 from data_structures import Transform
 
 
+# color gen using an adaptation of the sunflower seeds algorithm
 def get_color(c: int):
-    red = (c * 112) % 256
-    green = (64 + c * 144) % 256
-    blue = (128 + c * 48) % 256
+    def arcpoint(angle: float) -> float:
+        angle = angle % 360
+        if angle <= 60 or angle >= 300:
+            return 1
+        elif 120 <= angle <= 240:
+            return 0
+        elif angle < 120:
+            return 2 - (angle / 60)
+        else:
+            return (angle / 60) - 4
+    phi = (1 + 5 ** 0.5) / 2
+    theta = 360 * c/(phi ** 2) % 360
+    radius = 10 * phi * c ** 0.5 % 100
+    red = radius + (255-radius) * arcpoint(theta)
+    green = radius + (255-radius) * arcpoint(theta + 120)
+    blue = radius + (255-radius) * arcpoint(theta + 240)
     return red, green, blue
 
 
@@ -65,11 +79,6 @@ class VisibleRoad:
                 self.road.simulate_step(delta_time)
                 self.draw_road()
                 pygame.display.flip()
-                n = len(self.road.vehicles) - 1
-                for i in range(self.road.vehicles[0].view.awareness):
-                    print(f"Vehicle {i+1}/{0}: {self.road.vehicles[0].view.get_information(delta_time)[i+1]}")
-                for i in range(self.road.vehicles[n].view.awareness):
-                    print(f"Vehicle {i+1}/{n}: {self.road.vehicles[n].view.get_information(delta_time)[i+1]}")
                 if autosave > 0 and t % autosave == 0:
                     self.road.data.save_to_csv()
 
@@ -81,6 +90,7 @@ class VisibleRoad:
 
 class VisibleCircleRoad(VisibleRoad):
     radius: float
+    ring_width: float
 
     def __init__(self,
                  road: Road,
@@ -92,24 +102,31 @@ class VisibleCircleRoad(VisibleRoad):
         super(VisibleCircleRoad, self).__init__(road, screen_width, screen_height, road_width, sps)
 
         if radius is None:
-            self.radius = self.road.length/self.road_width
+            self.radius = min(self.screen_width * 0.4, self.screen_height * 0.4)
         else:
             self.radius = radius
 
+        ring_length = 2 * math.pi * self.radius
+        self.ring_width = self.road_width * self.road.length/ring_length
+
     def draw_car(self, transform: Transform, color):
         angle = 2 * transform.position/self.road.length * math.pi
-        car_length = 2000 * transform.length/self.road.length
-        car_width = car_length/2
+        car_width = self.road_width * 1.2
+        car_length = transform.length + car_width
+
         center_x = self.screen_width // 2 + self.radius * math.cos(angle)
         center_y = self.screen_height // 2 + self.radius * math.sin(angle)
         width_diff_x, width_diff_y = car_width/2 * math.cos(angle), car_width/2 * math.sin(angle)
         length_diff_x, length_diff_y = car_length/2 * math.sin(angle), - car_length/2 * math.cos(angle)
+        border = [[center_x + a * width_diff_x + b * length_diff_x, center_y + a * width_diff_y + b * length_diff_y]
+                   for a, b in [(1.25, 1.15), (1.25, -1.15), (-1.25, -1.15), (-1.25, 1.15)]]
         corners = [[center_x + a * width_diff_x + b * length_diff_x, center_y + a * width_diff_y + b * length_diff_y]
                    for a, b in [(1, 1), (1, -1), (-1, -1), (-1, 1)]]
+        pygame.draw.polygon(self.screen, (0, 0, 0), border)
         pygame.draw.polygon(self.screen, color, corners)
 
     def draw_road(self):
         pygame.draw.circle(self.screen, (100, 100, 100), (self.screen_width // 2, self.screen_height // 2),
                            self.radius + self.road_width/2, self.road_width)
         for i, vehicle in enumerate(self.road.vehicles):
-            self.draw_car(vehicle.physics.transform, get_color(i))
+            self.draw_car(vehicle.physics.transform, get_color(vehicle.id))
