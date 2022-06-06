@@ -24,7 +24,7 @@ class TestController(Controller):
         super(TestController, self).__init__()
 
     def acceleration_function(self) -> Callable:
-        if self.information:
+        if not self.information:
             def acceleration():
                 return self.max_acceleration
         else:
@@ -62,14 +62,13 @@ class IntelligentDriverController(Controller):
             (2 * math.sqrt(self.max_acceleration * self.comfortable_deceleration))
 
     def braking_interaction(self, vehicle_id):
-        return -(self.max_acceleration *
-                 (self.desired_minimum_gap(vehicle_id) /
-                  self.information[vehicle_id].position) ** 2)
+        return -self.max_acceleration * ((self.desired_minimum_gap(vehicle_id) /
+                                         self.information[vehicle_id].position) ** 2)
 
     def acceleration_function(self) -> Callable:
         def acceleration():
             a = self.free_acceleration()
-            for vehicle_id in range(1, len(self.information)-1):
+            for vehicle_id in range(1, len(self.information)):
                 a += self.braking_interaction(vehicle_id)
             return a
         return acceleration

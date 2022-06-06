@@ -2,6 +2,7 @@ import pygame
 import math
 from road import Road
 from data_structures import Transform
+from typing import Callable
 
 
 # color gen using an adaptation of the sunflower seeds algorithm
@@ -26,24 +27,28 @@ def get_color(c: int):
 
 
 class VisibleRoad:
+    road: Road
     screen_width: int
     screen_height: int
     road_width: int
     sps: float
     screen: pygame.Surface
+    debug_function: Callable
 
     def __init__(self,
                  road: Road,
                  screen_width=300,
                  screen_height=500,
                  road_width=10,
-                 sps=1):
+                 sps=1,
+                 debug_function=None):
         self.road = road
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.road_width = road_width
         self.sps = sps
         self.screen = pygame.display.set_mode([screen_width, screen_height])
+        self.debug_function = debug_function
 
     def draw_car(self, transform: Transform, color):
         y_position = transform.position / self.road.length * self.screen_height
@@ -65,12 +70,12 @@ class VisibleRoad:
 
     def simulate(self, delta_time: float, time_steps: int, autosave: int = 0):
         running = True
+        finished = False
         clock = pygame.time.Clock()
         pygame.init()
         t = 0
         fps = int(self.sps // delta_time)
         while running:
-
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -81,9 +86,12 @@ class VisibleRoad:
                 pygame.display.flip()
                 if autosave > 0 and t % autosave == 0:
                     self.road.data.save_to_csv()
-
                 clock.tick(fps)
                 t += 1
+            else:
+                finished = True
+            if not finished and self.debug_function is not None:
+                self.debug_function(self.road, delta_time)
         pygame.quit()
         self.screen = pygame.display.set_mode([self.screen_width, self.screen_height])
 
@@ -98,8 +106,9 @@ class VisibleCircleRoad(VisibleRoad):
                  screen_height=500,
                  road_width=10,
                  sps=1,
-                 radius=None):
-        super(VisibleCircleRoad, self).__init__(road, screen_width, screen_height, road_width, sps)
+                 radius=None,
+                 debug_function=None):
+        super(VisibleCircleRoad, self).__init__(road, screen_width, screen_height, road_width, sps, debug_function)
 
         if radius is None:
             self.radius = min(self.screen_width * 0.4, self.screen_height * 0.4)

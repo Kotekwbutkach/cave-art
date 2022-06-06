@@ -11,6 +11,7 @@ class Vehicle:
     physics: Physics
     view: View
     controller: Controller
+    history: TransformData
 
     def __init__(self, physics: Physics, controller: Controller, view: View):
         self.id = Vehicle.CURRENT_ID

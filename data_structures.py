@@ -66,16 +66,16 @@ class TransformData:
             return len(self.position)
         raise ValueError()
 
-    def __getitem__(self, item):
-        if item > len(self) - 1:
-            return self[-1]
-        if item < 0:
-            return self[0]
-        if type(item) == int:
-            return Transform(self.position[item], self.velocity[item], self.acceleration[item], self.length)
-        if type(item) == float:
-            beta = 1 - item % 1
-            return self[math.floor(item)] * beta + self[math.ceil(item)] * (1-beta)
+    def get_at(self, i, modulo=None):
+        if i > len(self) - 1 or i == -1:
+            return self.get_at(len(self)-1)
+        if i < 0:
+            return self.get_at(0)
+        if type(i) == int:
+            return Transform(self.position[i], self.velocity[i], self.acceleration[i], self.length)
+        if type(i) == float:
+            beta = 1 - i % 1
+            return self.get_at(math.floor(i)) * beta + self.get_at(math.ceil(i)) * (1-beta)
 
     def update(self):
         self.position.append(self.transform.position)
