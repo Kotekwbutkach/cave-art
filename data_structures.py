@@ -75,7 +75,20 @@ class TransformData:
             return Transform(self.position[i], self.velocity[i], self.acceleration[i], self.length)
         if type(i) == float:
             beta = 1 - i % 1
-            return self.get_at(math.floor(i)) * beta + self.get_at(math.ceil(i)) * (1-beta)
+            if modulo is None:
+                return self.get_at(math.floor(i)) * beta + self.get_at(math.ceil(i)) * (1 - beta)
+
+            value_before = self.get_at(math.floor(i))
+            value_after = self.get_at(math.ceil(i))
+
+            if (value_before.position > (modulo * 2/3)) and (value_after.position < (modulo * 1/3)):  # passed the modulo wrap
+                value_after.position += modulo
+            elif (value_before.position < (modulo * 1/3)) and (value_after.position > (modulo * 2/3)):  # reverse passed the modulo wrap
+                value_before.position += modulo
+
+            value = (value_before * beta + value_after * (1 - beta))
+            value.position = value.position % modulo
+            return value
 
     def update(self):
         self.position.append(self.transform.position)

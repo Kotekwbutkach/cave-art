@@ -20,7 +20,7 @@ def show_distance(road, delta_time):
     for vehicle in road.vehicles:
         DATA[vehicle].append(vehicle.view.get_information(delta_time)[-1])
 
-    if DEBUG_TIMER == 1000:
+    if DEBUG_TIMER == 1000 or DEBUG_TIMER == 2000:
         for vehicle in road.vehicles:
             data = [d.position for d in DATA[vehicle]]
             plt.plot(data)
@@ -51,15 +51,14 @@ def show_acceleration_logic(road, delta_time):
 
 
 def show_delta_time_correctness(road, delta_time):
-    if DEBUG_TIMER == 400:
-        print(road.vehicles[0].view.own_data.position)
-        print([road.vehicles[0].view.own_data.get_at(x).position for x in range(DEBUG_TIMER)])
-        print([road.vehicles[0].view.own_data.get_at(x-0.5).position for x in range(DEBUG_TIMER)])
+    print(f"Value - 1: {road.vehicles[0].view.own_data.get_at(DEBUG_TIMER - 1, modulo=road.length).position}")
+    print(f"Value - 2: {road.vehicles[0].view.own_data.get_at(DEBUG_TIMER - 2, modulo=road.length).position}")
+    print(f"Value - 1.5: {road.vehicles[0].view.own_data.get_at(DEBUG_TIMER - 1.5, modulo=road.length).position}")
 
 
 def debug_function(road, delta_time):
     show_distance(road, delta_time)
-    show_delta_time_correctness(road, delta_time)
+    # show_delta_time_correctness(road, delta_time)
     # show_acceleration_logic(road, delta_time)
 
     global DEBUG_TIMER
