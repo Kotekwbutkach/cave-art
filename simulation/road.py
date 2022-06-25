@@ -1,29 +1,19 @@
+from vehicle.vehicle import Vehicle, produce_vehicles
+from data_structures.road_data import RoadData
 from typing import Dict, List
-from vehicle import Vehicle, produce_vehicles
-from data_structures import RoadData
 
 
 class Road:
-    length: float
-    age: int
     vehicles: List[Vehicle]
     data: RoadData
-    debug: bool
 
-    def __init__(self, length: float, vehicles: List[Vehicle] = None, data: RoadData = None, debug: bool = False):
-        self.length = length
-        self.age = 0
+    def __init__(self, length: float, vehicles: List[Vehicle] = None):
 
         if vehicles is None:
             vehicles = list()
         self.vehicles = vehicles
         self.update_views()
-
-        if data is None:
-            data = RoadData()
-        self.data = data
-
-        self.debug = debug
+        self.data = RoadData(length, looped=False)
 
     def update_views(self):
         for i, v in enumerate(self.vehicles):
@@ -36,15 +26,11 @@ class Road:
         to_remove = 0
         for vehicle in self.vehicles:
             vehicle.simulate_step(time_delta)
-            if vehicle.physics.transform.position > self.length:
+            if vehicle.physics.transform.position > self.data.length:
                 to_remove += 1
         if to_remove > 0:
             self.remove_vehicles(to_remove)
-        self.age += 1
-
-    def simulate(self, time_delta: float, time_steps: int):
-        for t in range(time_steps):
-            self.simulate_step(time_delta)
+        self.data.update()
 
     def add_vehicle(self, vehicle: Vehicle):
         self.vehicles.append(vehicle)
@@ -61,17 +47,20 @@ class Road:
         self.update_views()
 
 
-class CircleRoad(Road):
+class CircularRoad(Road):
+    def __init__(self, length: float, vehicles: List[Vehicle] = None):
+        super().__init__(length, vehicles)
+        self.data.looped = True
+
     def simulate_step(self, time_delta: float):
         for vehicle in self.vehicles:
             vehicle.simulate_step(time_delta)
-            if vehicle.physics.transform.position > self.length or vehicle.physics.transform.position < 0:
-                vehicle.physics.transform.position = vehicle.physics.transform.position % self.length
-            vehicle.update_history()
-        self.age += 1
+            if vehicle.physics.transform.position > self.data.length or vehicle.physics.transform.position < 0:
+                vehicle.physics.transform.position = vehicle.physics.transform.position % self.data.length
+        self.data.update()
 
     def add_vehicle(self, vehicle: Vehicle):
-        vehicle.view.modulo = self.length
+        vehicle.view.modulo = self.data.length
         self.vehicles.append(vehicle)
         self.data.add_vehicle(vehicle)
         self.update_views()
@@ -80,22 +69,7 @@ class CircleRoad(Road):
         for i, v in enumerate(self.vehicles):
             if v.view.awareness is None:
                 v.view.input_data = [v.history for v in self.vehicles[i + 1:] + self.vehicles[:i]]
-
-                if self.debug:
-                    print(f"{v.id} (awareness: {v.view.awareness:}) is now following", end="")
-                    for other in self.vehicles[i + 1:] + self.vehicles[:i]:
-                        print(f" {other.id}", end=",")
-                    print()
-
             else:
                 input_data = self.vehicles[i+1:] + self.vehicles[:i]
                 n = len(input_data)
-                start = max(n - v.view.awareness, 0)
-                v.view.input_data = [v.history for v in input_data[n - 1 - v.view.awareness:]]
-
-                if self.debug:
-                    print(f"{v.id} (awareness: {v.view.awareness:}) is now following", end="")
-                    for other in input_data[start:]:
-                        print(f" {other.id}", end=",")
-                    print()
-
+                v.view.input_data = [v.history for v in input_data[max(n - 1 - v.view.awareness, 0):]]

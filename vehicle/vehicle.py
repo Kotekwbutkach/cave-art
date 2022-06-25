@@ -1,7 +1,7 @@
-from view_module import View, IntelligentDriverView, HumanDriverView
-from controller_module import Controller, IntelligentDriverController
-from physics_module import Physics
-from data_structures import TransformData
+from .view_module import View, IntelligentDriverView, HumanDriverView
+from .controller_module import Controller, IntelligentDriverController
+from .physics_module import Physics
+from data_structures.vehicle_data import VehicleData
 from typing import List, Dict
 
 
@@ -11,15 +11,14 @@ class Vehicle:
     physics: Physics
     view: View
     controller: Controller
-    history: TransformData
+    history: VehicleData
 
     def __init__(self, physics: Physics, controller: Controller, view: View):
-        self.id = Vehicle.CURRENT_ID
         Vehicle.CURRENT_ID += 1
         self.physics = physics
         self.controller = controller
         self.view = view
-        self.history = TransformData(self.physics.transform)
+        self.history = VehicleData(self.physics.transform, Vehicle.CURRENT_ID)
         self.view.own_data = self.history
 
     def simulate_step(self, delta_time):

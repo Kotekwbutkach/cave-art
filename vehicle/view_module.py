@@ -1,16 +1,17 @@
 from typing import List
-from data_structures import Transform, TransformData
-from wiener import Wiener
+from data_structures.transform import Transform
+from data_structures.vehicle_data import VehicleData
+from misc.wiener import Wiener
 import math
 
 
 class View:
-    own_data: TransformData
-    input_data: List[TransformData]
+    own_data: VehicleData
+    input_data: List[VehicleData]
     modulo: int
     awareness: int
 
-    def __init__(self, own_data: TransformData = None, input_data: List[TransformData] = None,
+    def __init__(self, own_data: VehicleData = None, input_data: List[VehicleData] = None,
                  awareness: int = None, modulo: int = None,
                  **kwargs):
         self.own_data = own_data
@@ -23,7 +24,7 @@ class View:
         self.awareness = awareness
         self.modulo = modulo
 
-    def add_vehicle(self, transform_data: TransformData, position: int):
+    def add_vehicle(self, transform_data: VehicleData, position: int):
         self.input_data = self.input_data[:position] + [transform_data] + self.input_data[position:]
         if self.awareness is not None and position < self.awareness:
             self.input_data = self.input_data[:self.awareness]
@@ -44,11 +45,11 @@ class View:
 class IntelligentDriverView(View):
     reaction_time: float
 
-    def __init__(self, own_data: TransformData = None, input_data: List[TransformData] = None,
+    def __init__(self, own_data: VehicleData = None, input_data: List[VehicleData] = None,
                  awareness: int = 1, reaction_time: float = 0,
                  **kwargs):
         self.reaction_time = reaction_time
-        super(IntelligentDriverView, self).__init__(own_data, input_data, awareness)
+        super().__init__(own_data, input_data, awareness)
 
         self.input_data = self.input_data[:awareness]
 
@@ -60,8 +61,8 @@ class IntelligentDriverView(View):
         time = self.measurement_time(delta_time)
 
         real_distance = ((transform_data.get_at(-1, self.modulo) -
-                             self.own_data.get_at(-1, self.modulo)).position
-                            - transform_data.length) % self.modulo
+                         self.own_data.get_at(-1, self.modulo)).position
+                         - transform_data.length) % self.modulo
         print(f"Real distance: {real_distance}")
 
         delayed_distance = ((transform_data.get_at(time, self.modulo) -
@@ -69,8 +70,8 @@ class IntelligentDriverView(View):
                             - transform_data.length) % self.modulo
 
         predicted_distance = delayed_distance + self.reaction_time * (transform_data.get_at(time, self.modulo) -
-                                                            self.own_data.get_at(time, self.modulo)).velocity +\
-                             self.reaction_time ** 2 / 2 * self.own_data.get_at(time, self.modulo).acceleration
+                                                                      self.own_data.get_at(time, self.modulo)).velocity\
+            + self.reaction_time ** 2 / 2 * self.own_data.get_at(time, self.modulo).acceleration
 
         print(f"predicted distance: {predicted_distance}")
         return predicted_distance
@@ -85,7 +86,7 @@ class IntelligentDriverView(View):
         time = self.measurement_time(delta_time)
         return (transform_data.get_at(time, self.modulo) - self.own_data.get_at(time, self.modulo)).velocity
 
-    def get_information(self, delta_time) -> List[TransformData]:
+    def get_information(self, delta_time) -> List[VehicleData]:
         time = self.measurement_time(delta_time)
         own_data = self.own_data.get_at(time, self.modulo)
         own_data.velocity = self.predict_velocity(delta_time)
@@ -107,7 +108,7 @@ class HumanDriverView(IntelligentDriverView):
     velocity_process: Wiener
 
     def __init__(self, reaction_time: float = 0, awareness: int = 1,
-                 own_data: TransformData = None, input_data: List[TransformData] = None,
+                 own_data: VehicleData = None, input_data: List[VehicleData] = None,
                  variation_coefficient: float = 0, average_estimation_error_inverse: float = 0,
                  correlation_times: float = 20,
                  **kwargs):
@@ -115,7 +116,7 @@ class HumanDriverView(IntelligentDriverView):
         self.average_estimation_error_inverse = average_estimation_error_inverse
         self.distance_process = Wiener(correlation_times)
         self.velocity_process = Wiener(correlation_times)
-        super(HumanDriverView, self).__init__(own_data, input_data, awareness, reaction_time)
+        super().__init__(own_data, input_data, awareness, reaction_time)
 
         self.input_data = self.input_data[:awareness]
 

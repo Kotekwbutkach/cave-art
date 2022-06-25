@@ -1,5 +1,5 @@
 from typing import Callable, List
-from data_structures import Transform
+from data_structures.transform import Transform
 import math
 
 
@@ -21,7 +21,7 @@ class TestController(Controller):
 
     def __init__(self, max_acceleration, **kwargs):
         self.max_acceleration = max_acceleration
-        super(TestController, self).__init__()
+        super().__init__()
 
     def acceleration_function(self) -> Callable:
         if not self.information:
@@ -51,7 +51,7 @@ class IntelligentDriverController(Controller):
         self.headway_time = headway_time
         self.comfortable_deceleration = comfortable_deceleration
 
-        super(IntelligentDriverController, self).__init__()
+        super().__init__()
 
     def free_acceleration(self):
         return self.max_acceleration * (1 - (self.information[0].velocity / self.max_velocity) ** 4)
