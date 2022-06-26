@@ -24,20 +24,20 @@ class View:
         self.awareness = awareness
         self.modulo = modulo
 
-    def add_vehicle(self, transform_data: VehicleData, position: int):
-        self.input_data = self.input_data[:position] + [transform_data] + self.input_data[position:]
+    def add_vehicle(self, vehicle_data: VehicleData, position: int):
+        self.input_data = self.input_data[:position] + [vehicle_data] + self.input_data[position:]
         if self.awareness is not None and position < self.awareness:
             self.input_data = self.input_data[:self.awareness]
 
     # data about other vehicles is relative to original transform
     def get_information(self, delta_time) -> List[Transform]:
         data = [self.own_data.get_at(-1)]
-        for transform_data in self.input_data:
-            new_entry = transform_data.get_at(-1) - self.own_data.get_at(-1)
+        for vehicle_data in self.input_data:
+            new_entry = vehicle_data.get_at(-1) - self.own_data.get_at(-1)
             new_entry.position -= new_entry.length
             if self.modulo is not None:
                 new_entry.position = new_entry.position % self.modulo
-            data = data + [new_entry]
+            data.append(new_entry)
             new_entry.velocity = max(new_entry.velocity, 0)
         return data
 
@@ -57,23 +57,18 @@ class IntelligentDriverView(View):
         time = len(self.own_data) - 1 - (self.reaction_time / delta_time)
         return time
 
-    def predict_distance(self, transform_data, delta_time):
+    def predict_distance(self, vehicle_data, delta_time):
         time = self.measurement_time(delta_time)
 
-        real_distance = ((transform_data.get_at(-1, self.modulo) -
-                         self.own_data.get_at(-1, self.modulo)).position
-                         - transform_data.length) % self.modulo
-        print(f"Real distance: {real_distance}")
-
-        delayed_distance = ((transform_data.get_at(time, self.modulo) -
+        delayed_distance = ((vehicle_data.get_at(time, self.modulo) -
                              self.own_data.get_at(time, self.modulo)).position
-                            - transform_data.length) % self.modulo
+                            - vehicle_data.length)
+        if self.modulo is not None:
+            delayed_distance = delayed_distance % self.modulo
 
-        predicted_distance = delayed_distance + self.reaction_time * (transform_data.get_at(time, self.modulo) -
+        predicted_distance = delayed_distance + self.reaction_time * (vehicle_data.get_at(time, self.modulo) -
                                                                       self.own_data.get_at(time, self.modulo)).velocity\
             + self.reaction_time ** 2 / 2 * self.own_data.get_at(time, self.modulo).acceleration
-
-        print(f"predicted distance: {predicted_distance}")
         return predicted_distance
 
     def predict_velocity(self, delta_time):
@@ -82,19 +77,19 @@ class IntelligentDriverView(View):
             * self.own_data.get_at(time, self.modulo).acceleration
         return velocity
 
-    def predict_velocity_difference(self, transform_data, delta_time):
+    def predict_velocity_difference(self, vehicle_data, delta_time):
         time = self.measurement_time(delta_time)
-        return (transform_data.get_at(time, self.modulo) - self.own_data.get_at(time, self.modulo)).velocity
+        return (vehicle_data.get_at(time, self.modulo) - self.own_data.get_at(time, self.modulo)).velocity
 
     def get_information(self, delta_time) -> List[VehicleData]:
         time = self.measurement_time(delta_time)
         own_data = self.own_data.get_at(time, self.modulo)
         own_data.velocity = self.predict_velocity(delta_time)
         data = [own_data]
-        for transform_data in self.input_data:
-            new_entry = transform_data.get_at(time, self.modulo) - self.own_data.get_at(time, self.modulo)
-            new_entry.position = self.predict_distance(transform_data, delta_time)
-            new_entry.velocity = self.predict_velocity_difference(transform_data, delta_time)
+        for vehicle_data in self.input_data:
+            new_entry = vehicle_data.get_at(time, self.modulo) - self.own_data.get_at(time, self.modulo)
+            new_entry.position = self.predict_distance(vehicle_data, delta_time)
+            new_entry.velocity = self.predict_velocity_difference(vehicle_data, delta_time)
             if self.modulo is not None:
                 new_entry.position = new_entry.position % self.modulo
             data = data + [new_entry]
@@ -120,25 +115,21 @@ class HumanDriverView(IntelligentDriverView):
 
         self.input_data = self.input_data[:awareness]
 
-    def measurement_time(self, delta_time):
-        time = len(self.own_data) - 1 - (self.reaction_time / delta_time)
-        return time
-
-    def estimate_distance(self, transform_data, time):
-        distance = (transform_data.get_at(time, self.modulo) - self.own_data.get_at(time, self.modulo)).position\
-                   - transform_data.length
+    def estimate_distance(self, vehicle_data, time):
+        distance = (vehicle_data.get_at(time, self.modulo) - self.own_data.get_at(time, self.modulo)).position\
+                   - vehicle_data.length
         return distance * math.exp(self.variation_coefficient * self.distance_process.value)
 
-    def estimate_velocity_difference(self, transform_data, time):
-        distance = (transform_data.get_at(time, self.modulo) - self.own_data.get_at(time, self.modulo)).position
-        velocity_difference = (transform_data.get_at(time, self.modulo) - self.own_data.get_at(time, self.modulo))\
+    def estimate_velocity_difference(self, vehicle_data, time):
+        distance = (vehicle_data.get_at(time, self.modulo) - self.own_data.get_at(time, self.modulo)).position
+        velocity_difference = (vehicle_data.get_at(time, self.modulo) - self.own_data.get_at(time, self.modulo))\
             .velocity
         return velocity_difference + distance * self.average_estimation_error_inverse * self.velocity_process.value
 
-    def predict_distance(self, transform_data, delta_time):
+    def predict_distance(self, vehicle_data, delta_time):
         time = self.measurement_time(delta_time)
-        distance = self.estimate_distance(transform_data, time) +\
-            self.reaction_time * self.estimate_velocity_difference(transform_data, time)
+        distance = self.estimate_distance(vehicle_data, time) +\
+            self.reaction_time * self.estimate_velocity_difference(vehicle_data, time)
         return distance
 
     def predict_velocity(self, delta_time):
@@ -147,6 +138,6 @@ class HumanDriverView(IntelligentDriverView):
             + self.reaction_time * self.own_data.get_at(time, self.modulo).acceleration
         return velocity
 
-    def predict_velocity_difference(self, transform_data, delta_time):
+    def predict_velocity_difference(self, vehicle_data, delta_time):
         time = self.measurement_time(delta_time)
-        return self.estimate_velocity_difference(transform_data, time)
+        return self.estimate_velocity_difference(vehicle_data, time)

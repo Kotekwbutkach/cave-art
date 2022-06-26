@@ -20,6 +20,8 @@ class Physics:
         self.transform.acceleration = acceleration_function()
 
     def simulate_step(self, acceleration_function, delta_time):
-        self.update_acceleration(acceleration_function)
-        self.update_velocity(delta_time)
         self.update_position(delta_time)
+        self.update_velocity(delta_time)
+        self.update_acceleration(acceleration_function)
+
+

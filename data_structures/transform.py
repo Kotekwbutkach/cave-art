@@ -28,10 +28,19 @@ class Transform:
     def __mul__(self, scale: float):
         return Transform(scale * self.position, scale * self.velocity, scale * self.acceleration, self.length)
 
+    def set_values(self, position, velocity, acceleration, length):
+        self.position = position
+        self.velocity = velocity
+        self.acceleration = acceleration
+        self.length = length
+
     def distance(self, other, modulo: float = None):
-        dist = other.position - other.length - self.position
+        dist = Transform(other.position - other.length - self.position,
+                         other.velocity - self.velocity,
+                         other.acceleration - self.acceleration,
+                         other.length)
         if modulo is not None:
-            dist = dist % modulo
+            dist.position = dist.position % modulo
         return dist
 
     def velocity_difference(self, other):

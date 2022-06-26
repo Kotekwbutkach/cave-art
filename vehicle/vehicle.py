@@ -14,12 +14,12 @@ class Vehicle:
     history: VehicleData
 
     def __init__(self, physics: Physics, controller: Controller, view: View):
-        Vehicle.CURRENT_ID += 1
         self.physics = physics
         self.controller = controller
         self.view = view
         self.history = VehicleData(self.physics.transform, Vehicle.CURRENT_ID)
         self.view.own_data = self.history
+        Vehicle.CURRENT_ID += 1
 
     def simulate_step(self, delta_time):
         information = self.view.get_information(delta_time)

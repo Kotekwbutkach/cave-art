@@ -30,8 +30,8 @@ class TestController(Controller):
         else:
             def acceleration():
                 a = self.max_acceleration
-                for transform_data in self.information[1:]:
-                    a -= (transform_data.velocity - self.information[0].velocity)
+                for vehicle_data in self.information[1:]:
+                    a -= (vehicle_data.velocity - self.information[0].velocity)
                 return a
         return acceleration
 

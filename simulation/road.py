@@ -27,6 +27,7 @@ class Road:
         for vehicle in self.vehicles:
             vehicle.simulate_step(time_delta)
             if vehicle.physics.transform.position > self.data.length:
+                vehicle.physics.transform.set_values(self.data.length, 0, 0, vehicle.physics.transform.length)
                 to_remove += 1
         if to_remove > 0:
             self.remove_vehicles(to_remove)
