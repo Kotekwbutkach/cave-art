@@ -30,7 +30,7 @@ class RoadVisual:
         self.vehicle_size = vehicle_size
 
     def draw_car(self, transform: Transform, color):
-        y_position = transform.position / self.road.data.length * self.screen_height
+        y_position = transform.position / self.road.data.road_length * self.screen_height
         position = (self.screen_width//2, y_position)
         car_width = self.vehicle_size * self.road_width * 1.1
         car_length = car_width * 2
@@ -95,10 +95,10 @@ class CircularRoadVisual(RoadVisual):
             self.radius = radius
 
         ring_length = 2 * math.pi * self.radius
-        self.ring_width = self.road_width * self.road.data.length/ring_length
+        self.ring_width = self.road_width * self.road.data.road_length/ring_length
 
     def draw_car(self, transform: Transform, color):
-        angle = 2 * transform.position/self.road.data.length * math.pi
+        angle = 2 * transform.position/self.road.data.road_length * math.pi
         car_width = self.vehicle_size * self.road_width * 1.1
         car_length = car_width * 2
 

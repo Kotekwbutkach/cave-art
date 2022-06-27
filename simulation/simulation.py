@@ -1,6 +1,7 @@
 from .road import CircularRoad, Road
 from vehicle.vehicle import Vehicle
 from typing import Callable
+from analysis.to_csv import save_to_csv
 
 
 class Simulation:
@@ -24,7 +25,7 @@ class Simulation:
                     self.debug_function(self.road, delta_time)
             except Exception as e:
                 print(f"An error ocurred during the simulation!: {e}")
-        self.road.data.save_to_csv(self.name)
+        save_to_csv(self.road.data, self.name)
         Vehicle.CURRENT_ID = 0
 
     def debug_simulate(self, delta_time: float, time_steps: int):
@@ -32,4 +33,4 @@ class Simulation:
             self.road.simulate_step(delta_time)
             if self.debug_function is not None:
                 self.debug_function(self.road, delta_time)
-        self.road.data.save_to_csv(self.name)
+        save_to_csv(self.road.data, self.name)

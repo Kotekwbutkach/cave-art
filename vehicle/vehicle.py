@@ -1,57 +1,78 @@
-from .view_module import View, IntelligentDriverView, HumanDriverView
-from .controller_module import Controller, IntelligentDriverController
-from .physics_module import Physics
+from data_structures.transform import Transform
 from data_structures.vehicle_data import VehicleData
-from typing import List, Dict
+from data_structures.road_data import RoadData
+from .vehicle_module.view_module import ViewModule, IntelligentDriverViewModule, HumanDriverViewModule
+from .vehicle_module.controller_module import ControllerModule, IntelligentDriverControllerModule
+from .vehicle_module.physics_module import PhysicsModule
+from typing import Dict, List
 
 
 class Vehicle:
-    CURRENT_ID = 0
-    id: int
-    physics: Physics
-    view: View
-    controller: Controller
-    history: VehicleData
+    data: VehicleData
+    view: ViewModule
+    controller: ControllerModule
+    physics: PhysicsModule
 
-    def __init__(self, physics: Physics, controller: Controller, view: View):
-        self.physics = physics
+    def __init__(self,
+                 road_data: RoadData,
+                 transform: Transform,
+                 vehicle_length: float,
+                 view: ViewModule,
+                 controller: ControllerModule,
+                 physics: PhysicsModule):
+        if road_data.looped:
+            modulo = road_data.road_length
+        else:
+            modulo = None
+        self.data = VehicleData(len(road_data), transform, vehicle_length, modulo)
+        self.view = view.assemble(self.data)
         self.controller = controller
-        self.view = view
-        self.history = VehicleData(self.physics.transform, Vehicle.CURRENT_ID)
-        self.view.own_data = self.history
-        Vehicle.CURRENT_ID += 1
+        self.physics = physics.assemble(transform)
 
-    def simulate_step(self, delta_time):
-        information = self.view.get_information(delta_time)
-        self.controller.update_information(information)
+    def __repr__(self):
+        return f"""{self.data}
+{self.view}
+{self.controller}
+{self.physics}
+"""
+
+    def simulate_step(self, road_data, delta_time):
+        self.view.get_view(road_data)
+        own_data, distances_list = self.view.return_information()
         acceleration_function = self.controller.acceleration_function()
-        self.physics.simulate_step(acceleration_function, delta_time)
+        self.physics.simulate_step(acceleration_function, own_data, distances_list, delta_time)
 
-    def update_history(self):
-        self.history.update()
+    def update(self):
+        self.data.update()
 
+    @staticmethod
+    def from_kwargs(road_data, **kwargs):
+        transform = Transform(kwargs["position"],
+                              kwargs["velocity"],
+                              kwargs["acceleration"])
 
-def vehicle_factory(controller_name, view_name):
-    def vehicle_maker(arglist: List[Dict]):
-        controller: Controller
-        view: View
+        vehicle_length = kwargs["vehicle_length"]
 
+        physics = PhysicsModule(**kwargs)
+
+        if kwargs["controller_module"] == "IntelligentDriverController":
+            controller = IntelligentDriverControllerModule(**kwargs)
+        else:
+            controller = ControllerModule(**kwargs)
+
+        if kwargs["view_module"] == "IntelligentDriverView":
+            view = IntelligentDriverViewModule(**kwargs)
+        elif kwargs["view_module"] == "HumanDriverView":
+            view = HumanDriverViewModule(**kwargs)
+        else:
+            view = ViewModule(**kwargs)
+        return Vehicle(road_data, transform, vehicle_length, view, controller, physics)
+
+    @staticmethod
+    def generate_vehicles(road_data, arglist: List[Dict]):
         for i in range(len(arglist)):
-            physics = Physics(**arglist[i])
-            if controller_name == "IntelligentDriverController":
-                controller = IntelligentDriverController(**arglist[i])
-            else:
-                controller = Controller()
-            if view_name == "IntelligentDriverView":
-                view = IntelligentDriverView(**arglist[i])
-            elif view_name == "HumanDriverView":
-                view = HumanDriverView(**arglist[i])
-            else:
-                view = View()
-            yield Vehicle(physics, controller, view)
-    return vehicle_maker
+            yield Vehicle.from_kwargs(road_data, **arglist[i])
 
-
-def produce_vehicles(controller_name, view_name, arglist):
-    generator = vehicle_factory(controller_name, view_name)(arglist)
-    return [v for v in generator]
+    @staticmethod
+    def produce_vehicles(road_data, arglist: List[Dict]):
+        return [v for v in Vehicle.generate_vehicles(road_data, arglist)]

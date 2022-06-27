@@ -1,65 +1,16 @@
-import matplotlib.pyplot as plt
-
-
-def full_road_info(road, delta_time):
-    for vehicle in road.vehicles:
-        print(f"Vehicle {vehicle.id}: {vehicle.history}")
-
 
 DEBUG_TIMER = 0
 DATA = dict()
 
 
-def show_distance(road, delta_time):
-    global DEBUG_TIMER
-    global DATA
-    if not DATA:
-        for vehicle in road.vehicles:
-            DATA[vehicle] = []
-
-    for vehicle in road.vehicles:
-        DATA[vehicle].append(vehicle.view.get_information(delta_time)[-1])
-
-    if DEBUG_TIMER == 1000 or DEBUG_TIMER == 2000:
-        for vehicle in road.vehicles:
-            data = [d.position for d in DATA[vehicle]]
-            plt.plot(data)
-        plt.savefig("graphs/debug_distance.png", format="png")
-        plt.show()
-        for vehicle in road.vehicles:
-            data = [d.velocity for d in DATA[vehicle]]
-            plt.plot(data)
-        plt.savefig("graphs/debug_velocity_diff.png", format="png")
-        plt.show()
-        for vehicle in road.vehicles:
-            data = [d.acceleration for d in DATA[vehicle]]
-            plt.plot(data)
-        plt.savefig("graphs/debug_acceleration_diff.png", format="png")
-        plt.show()
-
-
-def show_acceleration_logic(road, delta_time):
-    for vehicle in road.vehicles:
-        print(vehicle.id)
-        print(f"Total: {vehicle.controller.acceleration_function()()}")
-        print(f"Free: {vehicle.controller.free_acceleration()}")
-        print(f"Max_v: {vehicle.controller.max_velocity}")
-        print(f"Current_v: {vehicle.controller.information[0].velocity}")
-        print(f"View_v: {vehicle.view.own_data.velocity[-1]}")
-        for i in range(1, len(vehicle.controller.information)):
-            print(f"Braking {i}: {vehicle.controller.braking_interaction(i)}")
-
-
-def show_delta_time_correctness(road, delta_time):
-    print(f"Value - 1: {road.vehicles[0].view.own_data.get_at(DEBUG_TIMER - 1, modulo=road.length).position}")
-    print(f"Value - 2: {road.vehicles[0].view.own_data.get_at(DEBUG_TIMER - 2, modulo=road.length).position}")
-    print(f"Value - 1.5: {road.vehicles[0].view.own_data.get_at(DEBUG_TIMER - 1.5, modulo=road.length).position}")
+def awareness_check(road):
+    for v in road.vehicles:
+        print(v.data.vehicle_id)
+        print([w.vehicle_id for w in v.view.other_data_list])
 
 
 def debug_function(road, delta_time):
-    show_distance(road, delta_time)
-    # show_delta_time_correctness(road, delta_time)
-    # show_acceleration_logic(road, delta_time)
+    # awareness_check(road)
 
     global DEBUG_TIMER
     DEBUG_TIMER += 1

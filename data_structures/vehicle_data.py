@@ -1,59 +1,46 @@
-import math
-from typing import List
 from .transform import Transform
+from typing import List
+import math
 
 
 class VehicleData:
     vehicle_id: int
     transform: Transform
-    position: List[float]
-    velocity: List[float]
-    acceleration: List[float]
-    length: float
+    history: List[Transform]
+    vehicle_length: float
+    modulo: float
 
-    def __init__(self, transform, vehicle_id):
+    def __init__(self, vehicle_id: int, transform: Transform, vehicle_length: float, modulo: float = None):
         self.vehicle_id = vehicle_id
         self.transform = transform
-        self.position = [transform.position]
-        self.velocity = [transform.velocity]
-        self.acceleration = [transform.acceleration]
-        self.length = transform.length
+        self.history = [transform.copy()]
+        self.vehicle_length = vehicle_length
+        self.modulo = modulo
 
     def __str__(self):
-        return f"{str(self.position)}; {str(self.velocity)}; {str(self.acceleration)}; {str(self.length)}"
+        return f"Vehicle {self.vehicle_id}: {self.transform}"
 
     def __len__(self):
-        if len(self.position) == len(self.velocity) and len(self.position) == len(self.acceleration):
-            return len(self.position)
-        raise ValueError()
+        return len(self.history)
 
-    def get_at(self, i, modulo=None):
-        if i > len(self) - 1 or i == -1:
-            return self.get_at(len(self)-1)
-        if i < 0:
-            return self.get_at(0)
-        if type(i) == int:
-            return Transform(self.position[i], self.velocity[i], self.acceleration[i], self.length)
-        if type(i) == float:
-            beta = 1 - i % 1
-            if modulo is None:
-                return self.get_at(math.floor(i)) * beta + self.get_at(math.ceil(i)) * (1 - beta)
-
-            value_before = self.get_at(math.floor(i))
-            value_after = self.get_at(math.ceil(i))
-
-            if (value_before.position > (modulo * 2/3)) and (value_after.position < (modulo * 1/3)):
-                # passed the modulo wrap
-                value_after.position += modulo
-            elif (value_before.position < (modulo * 1/3)) and (value_after.position > (modulo * 2/3)):
-                # reverse passed the modulo wrap
-                value_before.position += modulo
-
-            value = (value_before * beta + value_after * (1 - beta))
-            value.position = value.position % modulo
-            return value
+    def age(self):
+        return len(self.history)
 
     def update(self):
-        self.position.append(self.transform.position)
-        self.velocity.append(self.transform.velocity)
-        self.acceleration.append(self.transform.acceleration)
+        self.history.append(self.transform.wrap(self.modulo).copy())
+
+    def __getitem__(self, n: int):
+        return self.history[n]
+
+    def get_at(self, time_step: float) -> Transform:
+        time_step = max(min(time_step, len(self) - 1), 0)
+
+        first_value = self[math.floor(time_step)]
+        second_value = self[math.ceil(time_step)]
+        beta = 1 - time_step % 1
+
+        return first_value.modulo_combination(second_value, self.modulo, beta, 1-beta)
+
+    def distance_at(self, other: "VehicleData", time_step: float):
+        value = other.get_at(time_step).modulo_combination(self.get_at(time_step), self.modulo, 1, -1)
+        return (value - Transform(other.vehicle_length, 0, 0)).wrap(self.modulo)
