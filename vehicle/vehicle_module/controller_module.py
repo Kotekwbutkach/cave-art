@@ -1,4 +1,4 @@
-from data_structures.transform import Transform
+from data_structures import Transform
 from typing import Callable, List
 import math
 

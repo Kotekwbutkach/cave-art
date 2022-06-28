@@ -1,4 +1,4 @@
-from .vehicle_data import VehicleData
+from . import VehicleData
 from typing import List
 
 

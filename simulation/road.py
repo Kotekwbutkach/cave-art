@@ -1,6 +1,5 @@
-from vehicle.vehicle import Vehicle
-from data_structures.road_data import RoadData
-from data_structures.transform import Transform
+from vehicle import Vehicle
+from data_structures import Transform, RoadData
 from typing import Dict, List
 
 

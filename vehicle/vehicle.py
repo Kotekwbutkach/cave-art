@@ -1,9 +1,6 @@
-from data_structures.transform import Transform
-from data_structures.vehicle_data import VehicleData
-from data_structures.road_data import RoadData
-from .vehicle_module.view_module import ViewModule, IntelligentDriverViewModule, HumanDriverViewModule
-from .vehicle_module.controller_module import ControllerModule, IntelligentDriverControllerModule
-from .vehicle_module.physics_module import PhysicsModule
+from data_structures import Transform, VehicleData, RoadData
+from .vehicle_module import ViewModule, HumanDriverViewModule, ControllerModule, IntelligentDriverControllerModule,\
+    PhysicsModule
 from typing import Dict, List
 
 
@@ -38,7 +35,7 @@ class Vehicle:
 
     def simulate_step(self, road_data, delta_time):
         self.view.get_view(road_data)
-        own_data, distances_list = self.view.return_information()
+        own_data, distances_list = self.view.get_information(delta_time)
         acceleration_function = self.controller.acceleration_function()
         self.physics.simulate_step(acceleration_function, own_data, distances_list, delta_time)
 
@@ -60,9 +57,7 @@ class Vehicle:
         else:
             controller = ControllerModule(**kwargs)
 
-        if kwargs["view_module"] == "IntelligentDriverView":
-            view = IntelligentDriverViewModule(**kwargs)
-        elif kwargs["view_module"] == "HumanDriverView":
+        if kwargs["view_module"] == "HumanDriverView":
             view = HumanDriverViewModule(**kwargs)
         else:
             view = ViewModule(**kwargs)

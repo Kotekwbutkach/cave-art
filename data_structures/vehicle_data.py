@@ -1,4 +1,4 @@
-from .transform import Transform
+from . import Transform
 from typing import List
 import math
 
@@ -42,5 +42,5 @@ class VehicleData:
         return first_value.modulo_combination(second_value, self.modulo, beta, 1-beta)
 
     def distance_at(self, other: "VehicleData", time_step: float):
-        value = other.get_at(time_step).modulo_combination(self.get_at(time_step), self.modulo, 1, -1)
-        return (value - Transform(other.vehicle_length, 0, 0)).wrap(self.modulo)
+        no_length_distance = other.get_at(time_step).modulo_combination(self.get_at(time_step), self.modulo, 1, -1)
+        return (no_length_distance - Transform(other.vehicle_length, 0, 0)).wrap(self.modulo)

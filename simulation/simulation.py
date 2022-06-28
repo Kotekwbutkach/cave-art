@@ -1,7 +1,7 @@
-from .road import CircularRoad, Road
-from vehicle.vehicle import Vehicle
+from . import CircularRoad, Road
+from vehicle import Vehicle
 from typing import Callable
-from analysis.to_csv import save_to_csv
+from analysis import save_to_csv
 
 
 class Simulation:
