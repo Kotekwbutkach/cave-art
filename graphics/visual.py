@@ -26,8 +26,8 @@ class RoadVisual:
         self.screen_height = screen_height
         self.road_width = road_width
         self.speed = speed
-        self.screen = pygame.display.set_mode([screen_width, screen_height])
         self.vehicle_size = vehicle_size
+        self.screen = pygame.display.set_mode([self.screen_width, self.screen_height])
 
     def draw_car(self, transform: Transform, color):
         y_position = transform.position / self.road.data.road_length * self.screen_height
@@ -57,6 +57,7 @@ class RoadVisual:
             self.draw_car(vehicle_data.get_at(n), from_id(vehicle_data.vehicle_id))
 
     def show(self):
+
         running = True
         clock = pygame.time.Clock()
         pygame.init()
