@@ -1,3 +1,3 @@
 from .view_module import ViewModule, HumanDriverViewModule
-from .controller_module import ControllerModule, IntelligentDriverControllerModule
+from .controller_module import ControllerModule, IntelligentDriverControllerModule, FollowerStopperControllerModule
 from .physics_module import PhysicsModule

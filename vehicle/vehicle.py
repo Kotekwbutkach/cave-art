@@ -1,5 +1,6 @@
 from data_structures import Transform, VehicleData, RoadData
-from .vehicle_module import ViewModule, HumanDriverViewModule, ControllerModule, IntelligentDriverControllerModule,\
+from .vehicle_module import ViewModule, HumanDriverViewModule,\
+    ControllerModule, IntelligentDriverControllerModule, FollowerStopperControllerModule,\
     PhysicsModule
 from typing import Dict, List
 
@@ -52,7 +53,9 @@ class Vehicle:
 
         physics = PhysicsModule(**kwargs)
 
-        if kwargs["controller_module"] == "IntelligentDriverController":
+        if kwargs["controller_module"] == "FollowerStopperDriverController":
+            controller = FollowerStopperControllerModule(**kwargs)
+        elif kwargs["controller_module"] == "IntelligentDriverController":
             controller = IntelligentDriverControllerModule(**kwargs)
         else:
             controller = ControllerModule(**kwargs)

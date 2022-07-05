@@ -1,5 +1,5 @@
 from data_structures import Transform
-from typing import Callable, List
+from typing import Callable, List, Tuple
 import math
 
 
@@ -79,4 +79,61 @@ class IntelligentDriverControllerModule(ControllerModule):
                                        (2 * math.sqrt(self.max_acceleration * self.comfortable_deceleration)))
                 coefficient -= ((desired_minimum_gap/distance_data.position) ** 2)
             return self.max_acceleration * coefficient
+        return acceleration
+
+
+class FollowerStopperControllerModule(ControllerModule):
+    max_velocity: float
+    max_acceleration: float
+    max_deceleration: float
+    delta_x_0: Tuple[float, float, float]
+    d: Tuple[float, float, float]
+
+    def __init__(self, max_velocity: float, max_acceleration: float, max_deceleration: float,
+                 delta_x_0: Tuple[float, float, float],
+                 d: Tuple[float, float, float], **kwargs):
+        super().__init__()
+        self.max_velocity = max_velocity
+        self.max_acceleration = max_acceleration
+        self.max_deceleration = max_deceleration
+        self.delta_x_0 = delta_x_0
+        self.d = d
+
+    def __repr__(self):
+        return "FollowerStopperControllerModule"
+
+    def acceleration_function(self) -> Callable:
+        # TODO h1,h2
+        def h1(current_velocity, target_velocity):
+            if target_velocity - current_velocity > 0:
+                return self.max_acceleration
+            return 0
+
+        def h2(current_velocity, target_velocity):
+            return -self.max_deceleration
+
+        def acceleration(own_data: Transform,
+                         distances_list: List[Transform]
+                         ) -> float:
+            delta_x = distances_list[-1].position
+            delta_v = -distances_list[-1].velocity
+            v = min(max(distances_list[-1].velocity + own_data.velocity, 0), self.max_velocity)
+
+            delta_x_ = tuple(self.delta_x_0[k] + max(delta_v, 0) ** 2 / (2 * self.d[k]) for k in range(3))
+
+
+            if delta_x > delta_x_[2]:
+                v_cmd = self.max_velocity
+            elif delta_x > delta_x_[1]:
+                v_cmd = (self.max_velocity - v) * (delta_x - delta_x_[1]) / (delta_x_[2] - delta_x_[1])
+            elif delta_x > delta_x_[0]:
+                v_cmd = v * (delta_x - delta_x_[0]) / (delta_x_[1] - delta_x_[0])
+            else:
+                v_cmd = 0
+
+            if v_cmd - own_data.velocity > -0.25:
+                a = h1(own_data.velocity, v_cmd)
+            else:
+                a = h2(own_data.velocity, v_cmd)
+            return a
         return acceleration

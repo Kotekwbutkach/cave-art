@@ -44,7 +44,7 @@ def default_simulation(name, number=15, road_length=260, simulation_length=10000
                        show=False, circular=True):
     vehicle_parameters = [{"controller_module": "IntelligentDriverController",
                            "view_module": "HumanDriverView",
-                           "position": road_length/2 - (road_length*x)/(2 * number),
+                           "position": road_length - (road_length*x)/number,
                            "velocity": 0,
                            "acceleration": 0,
                            "vehicle_length": 5,
@@ -62,8 +62,9 @@ def default_simulation(name, number=15, road_length=260, simulation_length=10000
 
     if arglist is not None:
         for vehicle_id in range(number):
-            for key in arglist[vehicle_id].keys():
-                vehicle_parameters[vehicle_id][key] = arglist[vehicle_id][key]
+            if arglist[vehicle_id] is not None:
+                for key in arglist[vehicle_id].keys():
+                    vehicle_parameters[vehicle_id][key] = arglist[vehicle_id][key]
 
     sim = Simulation(name, circular=circular, length=road_length)
     sim.road.add_vehicles(vehicle_parameters)
