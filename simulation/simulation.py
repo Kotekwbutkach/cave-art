@@ -41,7 +41,7 @@ class Simulation:
 
 
 def default_simulation(name, vehicle_number=15, road_length=260, simulation_length=10000, arglist: List[Dict] = None,
-                       show=False, analyze=False, circular=True, speed=3, screen_width=1000, screen_height=800):
+                       draw=False, show=False, analyze=False, circular=True, speed=3, screen_width=1000, screen_height=800):
     vehicle_parameters = [{"controller_module": "IntelligentDriverController",
                            "view_module": "HumanDriverView",
                            "position": road_length - (road_length*x) / vehicle_number,
@@ -70,11 +70,11 @@ def default_simulation(name, vehicle_number=15, road_length=260, simulation_leng
     sim.road.add_vehicles(vehicle_parameters)
 
     sim.debug_simulate(0.1, simulation_length)
-
-    vehicle_plots(sim, sim.name + "_full", end=sim.road.data.age-45, show=show)
-    vehicle_plots(sim, sim.name + "_pt1", end=1000, show=show)
-    vehicle_plots(sim, sim.name + "_pt2", start=3000, end=4000, show=show)
-    vehicle_plots(sim, sim.name + "_pt3", start=7000, end=8000, show=show)
+    if draw:
+        vehicle_plots(sim, sim.name + "_full", end=sim.road.data.age-45, show=show)
+        vehicle_plots(sim, sim.name + "_pt1", end=1000, show=show)
+        vehicle_plots(sim, sim.name + "_pt2", start=3000, end=4000, show=show)
+        vehicle_plots(sim, sim.name + "_pt3", start=7000, end=8000, show=show)
     if show:
         if circular:
             vis = CircularRoadVisual(sim.road, speed=speed, screen_width=screen_width, screen_height=screen_height)
