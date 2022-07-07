@@ -103,7 +103,6 @@ class FollowerStopperControllerModule(ControllerModule):
         return "FollowerStopperControllerModule"
 
     def acceleration_function(self) -> Callable:
-        # TODO h1,h2
         def h1(current_velocity, target_velocity):
             if target_velocity - current_velocity > 0:
                 return self.max_acceleration
@@ -121,7 +120,6 @@ class FollowerStopperControllerModule(ControllerModule):
 
             delta_x_ = tuple(self.delta_x_0[k] + max(delta_v, 0) ** 2 / (2 * self.d[k]) for k in range(3))
 
-
             if delta_x > delta_x_[2]:
                 v_cmd = self.max_velocity
             elif delta_x > delta_x_[1]:
@@ -130,6 +128,64 @@ class FollowerStopperControllerModule(ControllerModule):
                 v_cmd = v * (delta_x - delta_x_[0]) / (delta_x_[1] - delta_x_[0])
             else:
                 v_cmd = 0
+
+            if v_cmd - own_data.velocity > -0.25:
+                a = h1(own_data.velocity, v_cmd)
+            else:
+                a = h2(own_data.velocity, v_cmd)
+            return a
+        return acceleration
+
+
+class ProportionalIntegralControllerModule(ControllerModule):
+    v_catch: float
+    gu: float
+    gl: float
+    gamma: float
+    max_acceleration: float
+    max_deceleration: float
+    previous_v_cmd: float
+
+    def __init__(self, v_catch: float,
+                 gu: float,
+                 gl: float,
+                 gamma: float,
+                 max_acceleration: float,
+                 max_deceleration: float, **kwargs):
+        super().__init__()
+        self.v_catch = v_catch
+        self.gu = gu
+        self.gl = gl
+        self.gamma = gamma
+        self.max_acceleration = max_acceleration
+        self.max_deceleration = max_deceleration
+        self.previous_v_cmd = 0
+
+    def __repr__(self):
+        return "ProportionalIntegralControllerModule"
+
+    def acceleration_function(self) -> Callable:
+        def h1(current_velocity, target_velocity):
+            if target_velocity - current_velocity > 0:
+                return self.max_acceleration
+            return 0
+
+        def h2(current_velocity, target_velocity):
+            return -self.max_deceleration
+
+        def acceleration(own_data: Transform,
+                         proportional_integral_view_list: List[Transform]
+                         ) -> float:
+            lead = proportional_integral_view_list[0]
+            delta = proportional_integral_view_list[1]
+            u = proportional_integral_view_list[2].velocity
+
+            v_target = u + self.v_catch * min(max((delta.position - self.gl)/(self.gu - self.gl), 0), 1)
+            delta_xs = max(2 * delta.velocity, 4)
+            alpha = min(max(delta.position - delta_xs, 0), 1)
+            beta = 1-(alpha/2)
+            v_cmd = beta * (alpha * v_target + (1-alpha) * -lead.velocity) + (1-beta) * self.previous_v_cmd
+            self.previous_v_cmd = v_cmd
 
             if v_cmd - own_data.velocity > -0.25:
                 a = h1(own_data.velocity, v_cmd)

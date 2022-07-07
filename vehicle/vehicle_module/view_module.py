@@ -97,3 +97,26 @@ class HumanDriverViewModule(ViewModule):
         own_data, distances_list = self.estimate_data(own_data, distances_list, time_step, delta_time)
         own_data, distances_list = self.predict_data(own_data, distances_list)
         return own_data, distances_list
+
+
+class ProportionalIntegralViewModule(ViewModule):
+    m_steps: int
+
+    def __init__(self, awareness: int,
+                 m_steps: int,
+                 **kwargs):
+        super().__init__(awareness, **kwargs)
+        self.m_steps = m_steps
+
+    def get_information(self, delta_time) -> Tuple[Transform, List[Transform]]:
+        time_step = self.own_data.age() - 1
+        lead_data = self.other_data_list[-1][time_step]
+        distance_data = self.own_data.distance_at(self.other_data_list[-1], time_step)
+        own_time_data = self.own_data[time_step - self.m_steps + 1: time_step + 1]
+        if not own_time_data:
+            mean_data = Transform(0, 0, 0)
+        else:
+            mean_data = Transform(sum(data_step.position for data_step in own_time_data)/len(own_time_data),
+                                  sum(data_step.velocity for data_step in own_time_data)/len(own_time_data),
+                                  sum(data_step.acceleration for data_step in own_time_data)/len(own_time_data))
+        return self.own_data.get_at(time_step), [lead_data, distance_data, mean_data]

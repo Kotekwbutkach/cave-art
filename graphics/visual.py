@@ -19,21 +19,19 @@ class RoadVisual:
                  screen_width: int = 300,
                  screen_height: int = 500,
                  road_width: int = 10,
-                 speed: float = 1.,
-                 vehicle_size: float = 1.):
+                 speed: float = 1.):
         self.road = road
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.road_width = road_width
         self.speed = speed
-        self.vehicle_size = vehicle_size
         self.screen = pygame.display.set_mode([self.screen_width, self.screen_height])
 
-    def draw_car(self, transform: Transform, color):
+    def draw_car(self, transform: Transform, vehicle_length: float, color):
         y_position = transform.position / self.road.data.road_length * self.screen_height
         position = (self.screen_width//2, y_position)
-        car_width = self.vehicle_size * self.road_width * 1.1
-        car_length = car_width * 2
+        car_width = self.road_width * 1.1
+        car_length = self.screen_height * vehicle_length/self.road.data.road_length
 
         border = pygame.Rect([position[0] - (car_width / 2) * 1.15,
                              position[1] - car_length * 1.15,
@@ -54,7 +52,7 @@ class RoadVisual:
     def draw_frame(self, n):
         self.draw_road()
         for vehicle_data in self.road.data.vehicles_data:
-            self.draw_car(vehicle_data.get_at(n), from_id(vehicle_data.vehicle_id))
+            self.draw_car(vehicle_data.get_at(n), vehicle_data.vehicle_length, from_id(vehicle_data.vehicle_id))
 
     def show(self):
 
@@ -86,9 +84,8 @@ class CircularRoadVisual(RoadVisual):
                  screen_height=500,
                  road_width=10,
                  speed=1.,
-                 vehicle_size=1,
                  radius: int = None):
-        super().__init__(road, screen_width, screen_height, road_width, speed, vehicle_size)
+        super().__init__(road, screen_width, screen_height, road_width, speed)
 
         if radius is None:
             self.radius = min(self.screen_width * 0.4, self.screen_height * 0.4)
@@ -98,10 +95,11 @@ class CircularRoadVisual(RoadVisual):
         ring_length = 2 * math.pi * self.radius
         self.ring_width = self.road_width * self.road.data.road_length/ring_length
 
-    def draw_car(self, transform: Transform, color):
+    def draw_car(self, transform: Transform, vehicle_length: float, color):
         angle = 2 * transform.position/self.road.data.road_length * math.pi
-        car_width = self.vehicle_size * self.road_width * 1.1
-        car_length = car_width * 2
+
+        car_width = self.road_width * 1.1
+        car_length = 2 * math.pi * self.radius * vehicle_length / self.road.data.road_length
 
         center_x = self.screen_width // 2 + self.radius * math.cos(angle)
         center_y = self.screen_height // 2 + self.radius * math.sin(angle)
