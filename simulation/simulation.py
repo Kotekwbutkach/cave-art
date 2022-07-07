@@ -44,7 +44,7 @@ def default_simulation(name, number=15, road_length=260, simulation_length=10000
                        show=False, circular=True):
     vehicle_parameters = [{"controller_module": "IntelligentDriverController",
                            "view_module": "HumanDriverView",
-                           "position": road_length - (road_length*x)/number,
+                           "position": road_length/2 - (road_length*x)/(2*number),
                            "velocity": 0,
                            "acceleration": 0,
                            "vehicle_length": 5,
@@ -52,11 +52,11 @@ def default_simulation(name, number=15, road_length=260, simulation_length=10000
                            "max_acceleration": 1,
                            "max_velocity": 25,
                            "minimum_distance": 2,
-                           "time_headway": 0.5,
+                           "time_headway": 2,
                            "comfortable_deceleration": 1.5,
-                           "reaction_time": 0.5,
+                           "reaction_time": 0.8,
                            "relative_distance_error": 0.05,
-                           "inverse_average_estimation_error": 0.01,
+                           "inverse_average_estimation_error": 0.05,
                            "correlation_times": 20}
                           for x in range(number)]
 

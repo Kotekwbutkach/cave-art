@@ -5,10 +5,11 @@ from analysis import to_data_frame, csv_to_data_frame, velocity_std, throughput
 number = 21
 looped = True
 road_length = 500
+simulation_length = 10000
 
 # Simulation 0
 
-sim = default_simulation("sim0", number=number, road_length=road_length, show=True)
+sim = default_simulation("sim0", number=number, road_length=road_length, simulation_length=simulation_length, show=True)
 
 pos_df, vel_df, acc_df = to_data_frame(sim.road.data)
 
@@ -23,7 +24,7 @@ vis.show()
 
 # Simulation 1
 
-sim = default_simulation("sim1", number=number, road_length=road_length, show=True,
+sim = default_simulation("sim1", number=number, road_length=road_length, simulation_length=simulation_length, show=True,
                          arglist=[{"view_module": "ViewModule",
                                    "controller_module": "FollowerStopperDriverController",
                                    "max_acceleration": 1,
