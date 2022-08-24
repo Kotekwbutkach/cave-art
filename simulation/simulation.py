@@ -39,51 +39,56 @@ class Simulation:
                 self.debug_function(self.road, delta_time)
         to_csv(self.road.data, self.name)
 
+    @staticmethod
+    def default_simulation(name, vehicle_number=21, road_length=260, simulation_length=6000,
+                           arglist: List[Dict] = None, draw=True, show=False, analyze=False, circular=True, speed=3,
+                           screen_width=1000, screen_height=800):
+        vehicle_parameters = [{"controller_module": "IntelligentDriverController",
+                               "controller_submodules": None,
+                               "view_module": "HumanDriverView",
+                               "position": road_length - (road_length*x) / vehicle_number,
+                               "velocity": 0,
+                               "acceleration": 0,
+                               "vehicle_length": 5,
+                               "awareness": 5,
+                               "max_acceleration": 1,
+                               "max_velocity": 36,
+                               "minimum_distance": 2,
+                               "time_headway": 0.7,
+                               "comfortable_deceleration": 1.5,
+                               "reaction_time": 0.5,
+                               "relative_distance_error": 0.05,
+                               "inverse_average_estimation_error": 0.01,
+                               "correlation_times": 200}
+                              for x in range(vehicle_number)]
+        if arglist is not None:
+            for vehicle_id in range(vehicle_number):
+                if arglist[vehicle_id] is not None:
+                    for key in arglist[vehicle_id].keys():
+                        vehicle_parameters[vehicle_id][key] = arglist[vehicle_id][key]
 
-def default_simulation(name, vehicle_number=15, road_length=260, simulation_length=10000, arglist: List[Dict] = None,
-                       draw=False, show=False, analyze=False, circular=True, speed=3, screen_width=1000, screen_height=800):
-    vehicle_parameters = [{"controller_module": "IntelligentDriverController",
-                           "view_module": "HumanDriverView",
-                           "position": road_length - (road_length*x) / vehicle_number,
-                           "velocity": 0,
-                           "acceleration": 0,
-                           "vehicle_length": 5,
-                           "awareness": 5,
-                           "max_acceleration": 1,
-                           "max_velocity": 25,
-                           "minimum_distance": 4,
-                           "time_headway": 2,
-                           "comfortable_deceleration": 1.5,
-                           "reaction_time": 1,
-                           "relative_distance_error": 0.05,
-                           "inverse_average_estimation_error": 0.01,
-                           "correlation_times": 20}
-                          for x in range(vehicle_number)]
+        sim = Simulation(name, circular=circular, length=road_length)
+        sim.road.add_vehicles(vehicle_parameters)
 
-    if arglist is not None:
-        for vehicle_id in range(vehicle_number):
-            if arglist[vehicle_id] is not None:
-                for key in arglist[vehicle_id].keys():
-                    vehicle_parameters[vehicle_id][key] = arglist[vehicle_id][key]
+        sim.debug_simulate(0.1, simulation_length)
 
-    sim = Simulation(name, circular=circular, length=road_length)
-    sim.road.add_vehicles(vehicle_parameters)
+        if draw:
+            vehicle_plots(sim, sim.name + "_full", end=sim.road.data.age, show=True)
+            vehicle_plots(sim, sim.name + "_pt1", end=1000, show=True)
+            vehicle_plots(sim, sim.name + "_pt2", start=3000, end=4000, show=True)
+            vehicle_plots(sim, sim.name + "_pt3", start=7000, end=8000, show=True)
 
-    sim.debug_simulate(0.1, simulation_length)
-    if draw:
-        vehicle_plots(sim, sim.name + "_full", end=sim.road.data.age-45, show=show)
-        vehicle_plots(sim, sim.name + "_pt1", end=1000, show=show)
-        vehicle_plots(sim, sim.name + "_pt2", start=3000, end=4000, show=show)
-        vehicle_plots(sim, sim.name + "_pt3", start=7000, end=8000, show=show)
-    if show:
-        if circular:
-            vis = CircularRoadVisual(sim.road, speed=speed, screen_width=screen_width, screen_height=screen_height)
-        else:
-            vis = RoadVisual(sim.road, speed=speed, screen_width=screen_width, screen_height=screen_height)
-    if analyze:
-        pos_df, vel_df, acc_df = to_data_frame(sim.road.data)
-        std = velocity_std(vel_df)
-        thr = throughput(vel_df, road_length=road_length)
-        return sim, (std, thr)
+        if show:
+            if circular:
+                vis = CircularRoadVisual(sim.road, speed=speed, screen_width=screen_width, screen_height=screen_height)
+            else:
+                vis = RoadVisual(sim.road, speed=speed, screen_width=screen_width, screen_height=screen_height)
+            vis.show()
 
-    return sim, None
+        if analyze:
+            pos_df, vel_df, acc_df = to_data_frame(sim.road.data)
+            std = velocity_std(vel_df)
+            thr = throughput(vel_df, road_length=road_length)
+            return sim, (std, thr)
+
+        return sim, None
