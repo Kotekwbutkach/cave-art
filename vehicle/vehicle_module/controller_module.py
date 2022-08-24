@@ -1,5 +1,5 @@
 from data_structures import Transform
-from typing import Callable, List, Tuple
+from typing import Callable, List, Tuple, Dict
 import math
 
 
@@ -60,7 +60,7 @@ class IntelligentDriverControllerModule(ControllerModule):
         super().__init__()
 
     def __repr__(self):
-        return f"""BaseControllerModule:
+        return f"""IntelligentDriverControllerModule:
     max_acceleration: {self.max_acceleration}
     max_velocity: {self.max_velocity}
     minimum_distance: {self.minimum_distance}
@@ -71,11 +71,12 @@ class IntelligentDriverControllerModule(ControllerModule):
         def acceleration(own_data: Transform,
                          distances_list: List[Transform]
                          ) -> float:
-            coefficient = (1 - ((own_data.velocity / self.max_velocity) ** 4))
+            velocity = max(own_data.velocity, 0)
+            coefficient = 1 - (velocity / self.max_velocity) ** 4
             for distance_data in distances_list:
                 desired_minimum_gap = (self.minimum_distance +
-                                       own_data.velocity * self.time_headway -
-                                       (own_data.velocity * distance_data.velocity) /
+                                       velocity * self.time_headway -
+                                       (velocity * distance_data.velocity) /
                                        (2 * math.sqrt(self.max_acceleration * self.comfortable_deceleration)))
                 coefficient -= ((desired_minimum_gap/distance_data.position) ** 2)
             return self.max_acceleration * coefficient
@@ -193,3 +194,27 @@ class ProportionalIntegralControllerModule(ControllerModule):
                 a = h2(own_data.velocity, v_cmd)
             return a
         return acceleration
+
+
+class VariableControlsControllerModule(ControllerModule):
+    def __init__(self, *args: Tuple[ControllerModule, int]):
+        super().__init__()
+        self.time_step = 0
+        self.controller_submodule_data = list(args)
+        self.current_controller = self.controller_submodule_data[-1][0]
+
+    def __repr__(self):
+        string = f"VariableControlsControllerModule\n"
+        for controller_submodule, _ in self.controller_submodule_data:
+            string += str(controller_submodule) + "\n"
+        return string
+
+    def step(self):
+        self.time_step += 1
+        if len(self.controller_submodule_data) > 1 and self.time_step >= self.controller_submodule_data[-1][1]:
+            self.controller_submodule_data.pop(-1)
+            self.time_step = 0
+            self.current_controller = self.controller_submodule_data[-1][0]
+
+    def acceleration_function(self, *args, **kwargs) -> Callable:
+        return self.current_controller.acceleration_function()

@@ -34,6 +34,9 @@ class Transform:
             self.position %= modulo
         return self
 
+    def copy(self):
+        return Transform(self.position, self.velocity, self.acceleration)
+
     def modulo_combination(self, other, modulo, self_scale, other_scale, stability: float = 1 / 3):
         first_value = self.copy()
         second_value = other.copy()
@@ -48,5 +51,3 @@ class Transform:
 
         return (first_value * self_scale) + (second_value * other_scale).wrap(modulo)
 
-    def copy(self):
-        return Transform(self.position, self.velocity, self.acceleration)

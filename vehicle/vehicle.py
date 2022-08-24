@@ -1,8 +1,8 @@
 from data_structures import Transform, VehicleData, RoadData
-from .vehicle_module import ViewModule, HumanDriverViewModule, ProportionalIntegralViewModule,\
-    ControllerModule, IntelligentDriverControllerModule, FollowerStopperControllerModule,\
-    ProportionalIntegralControllerModule,\
-    PhysicsModule
+from .vehicle_module import ViewModule, HumanDriverViewModule, ProportionalIntegralViewModule, \
+    ControllerModule, IntelligentDriverControllerModule, FollowerStopperControllerModule, \
+    ProportionalIntegralControllerModule, \
+    PhysicsModule, VariableControlsControllerModule
 from typing import Dict, List
 
 
@@ -53,8 +53,9 @@ class Vehicle:
         vehicle_length = kwargs["vehicle_length"]
 
         physics = PhysicsModule(**kwargs)
-
-        if kwargs["controller_module"] == "FollowerStopperController":
+        if kwargs["controller_module"] == "VariableControlsController":
+            controller = VariableControlsControllerModule(*kwargs["controller_submodules"])
+        elif kwargs["controller_module"] == "FollowerStopperController":
             controller = FollowerStopperControllerModule(**kwargs)
         elif kwargs["controller_module"] == "IntelligentDriverController":
             controller = IntelligentDriverControllerModule(**kwargs)
