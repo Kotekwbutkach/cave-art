@@ -74,9 +74,9 @@ class Simulation:
 
         if draw:
             vehicle_plots(sim, sim.name + "_full", end=sim.road.data.age, show=True)
-            vehicle_plots(sim, sim.name + "_pt1", end=1000, show=True)
-            vehicle_plots(sim, sim.name + "_pt2", start=3000, end=4000, show=True)
-            vehicle_plots(sim, sim.name + "_pt3", start=7000, end=8000, show=True)
+            vehicle_plots(sim, sim.name + "_pt1", end=2000, show=True)
+            vehicle_plots(sim, sim.name + "_pt2", start=2000, end=4000, show=True)
+            vehicle_plots(sim, sim.name + "_pt3", start=4000, end=6000, show=True)
 
         if show:
             if circular:

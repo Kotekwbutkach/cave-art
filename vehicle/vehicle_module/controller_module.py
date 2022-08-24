@@ -201,7 +201,7 @@ class VariableControlsControllerModule(ControllerModule):
         super().__init__()
         self.time_step = 0
         self.controller_submodule_data = list(args)
-        self.current_controller = self.controller_submodule_data[-1][0]
+        self.current_controller = self.controller_submodule_data[0][0]
 
     def __repr__(self):
         string = f"VariableControlsControllerModule\n"
@@ -211,10 +211,11 @@ class VariableControlsControllerModule(ControllerModule):
 
     def step(self):
         self.time_step += 1
-        if len(self.controller_submodule_data) > 1 and self.time_step >= self.controller_submodule_data[-1][1]:
-            self.controller_submodule_data.pop(-1)
+        if len(self.controller_submodule_data) > 1 and self.time_step >= self.controller_submodule_data[0][1]:
+            self.controller_submodule_data.pop(0)
             self.time_step = 0
-            self.current_controller = self.controller_submodule_data[-1][0]
+            self.current_controller = self.controller_submodule_data[0][0]
 
     def acceleration_function(self, *args, **kwargs) -> Callable:
+        self.step()
         return self.current_controller.acceleration_function()
