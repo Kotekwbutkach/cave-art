@@ -2,6 +2,8 @@ from data_structures import Transform
 from typing import Callable, List, Tuple, Dict
 import math
 
+H_COEFFICIENT = 2
+
 
 class ControllerModule:
 
@@ -105,12 +107,10 @@ class FollowerStopperControllerModule(ControllerModule):
 
     def acceleration_function(self) -> Callable:
         def h1(current_velocity, target_velocity):
-            if target_velocity - current_velocity > 0:
-                return self.max_acceleration
-            return 0
+            return max(abs(math.pow(2/(1+math.exp(current_velocity - target_velocity)) - 1, H_COEFFICIENT)), 0) * self.max_acceleration
 
         def h2(current_velocity, target_velocity):
-            return -self.max_deceleration
+            return -max(abs(math.pow(2/(1+math.exp(current_velocity - target_velocity)) - 1, H_COEFFICIENT)), 0) * self.max_acceleration
 
         def acceleration(own_data: Transform,
                          distances_list: List[Transform]
@@ -124,7 +124,7 @@ class FollowerStopperControllerModule(ControllerModule):
             if delta_x > delta_x_[2]:
                 v_cmd = self.max_velocity
             elif delta_x > delta_x_[1]:
-                v_cmd = (self.max_velocity - v) * (delta_x - delta_x_[1]) / (delta_x_[2] - delta_x_[1])
+                v_cmd = v + (self.max_velocity - v) * (delta_x - delta_x_[1]) / (delta_x_[2] - delta_x_[1])
             elif delta_x > delta_x_[0]:
                 v_cmd = v * (delta_x - delta_x_[0]) / (delta_x_[1] - delta_x_[0])
             else:
@@ -167,12 +167,10 @@ class ProportionalIntegralControllerModule(ControllerModule):
 
     def acceleration_function(self) -> Callable:
         def h1(current_velocity, target_velocity):
-            if target_velocity - current_velocity > 0:
-                return self.max_acceleration
-            return 0
+            return max(abs(math.pow(2/(1+math.exp(current_velocity - target_velocity)) - 1, H_COEFFICIENT)), 0) * self.max_acceleration
 
         def h2(current_velocity, target_velocity):
-            return -self.max_deceleration
+            return -max(abs(math.pow(2/(1+math.exp(current_velocity - target_velocity)) - 1, H_COEFFICIENT)), 0) * self.max_acceleration
 
         def acceleration(own_data: Transform,
                          proportional_integral_view_list: List[Transform]

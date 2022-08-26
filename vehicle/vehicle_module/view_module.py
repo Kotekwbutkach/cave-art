@@ -54,6 +54,13 @@ class HumanDriverViewModule(ViewModule):
         self.velocity_process = Wiener(correlation_times)
         super().__init__(awareness, **kwargs)
 
+    def __repr__(self):
+        return f"""HumanDriverViewModule:
+    awareness: {self.awareness}
+    reaction_time: {self.reaction_time}
+    relative_distance_error: {self.relative_distance_error}
+    inverse_average_estimation_error: {self.inverse_average_estimation_error}"""
+
     def data_input(self, time_step):
         return self.own_data.get_at(time_step), \
             [self.own_data.distance_at(vehicle_data, time_step) for vehicle_data in self.other_data_list]
@@ -108,15 +115,56 @@ class ProportionalIntegralViewModule(ViewModule):
         super().__init__(awareness, **kwargs)
         self.m_steps = m_steps
 
+    def __repr__(self):
+        return f"""ProportionalIntegralViewModule:
+    awareness: {self.awareness}
+    m_steps: {self.m_steps}"""
+
     def get_information(self, delta_time) -> Tuple[Transform, List[Transform]]:
         time_step = self.own_data.age() - 1
         lead_data = self.other_data_list[-1][time_step]
         distance_data = self.own_data.distance_at(self.other_data_list[-1], time_step)
         own_time_data = self.own_data[time_step - self.m_steps + 1: time_step + 1]
         if not own_time_data:
-            mean_data = Transform(0, 0, 0)
+            mean_data = Transform(10, 1, 1)
         else:
             mean_data = Transform(sum(data_step.position for data_step in own_time_data)/len(own_time_data),
                                   sum(data_step.velocity for data_step in own_time_data)/len(own_time_data),
                                   sum(data_step.acceleration for data_step in own_time_data)/len(own_time_data))
+        with open("./log.txt", "a") as f:
+            f.write(f"{self.own_data.get_at(time_step), [lead_data, distance_data, mean_data]}\n")
         return self.own_data.get_at(time_step), [lead_data, distance_data, mean_data]
+
+
+class VariableViewsViewModule(ViewModule):
+    def __init__(self, *args: Tuple[ViewModule, int]):
+        self.time_step = 0
+        self.view_submodule_data = list(args)
+        self.current_view = self.view_submodule_data[0][0]
+        super().__init__(awareness=self.current_view.awareness)
+
+    def __repr__(self):
+        string = f"VariableViewsViewModule\n"
+        for view_submodule, _ in self.view_submodule_data:
+            string += str(view_submodule) + "\n"
+        return string
+
+    def get_view(self, road_data: RoadData):
+        for view_submodule, _ in self.view_submodule_data:
+            view_submodule.get_view(road_data)
+
+    def assemble(self, vehicle_data):
+        for view_submodule, _ in self.view_submodule_data:
+            view_submodule.assemble(vehicle_data)
+        return self
+
+    def step(self):
+        self.time_step += 1
+        if len(self.view_submodule_data) > 1 and self.time_step >= self.view_submodule_data[0][1]:
+            self.view_submodule_data.pop(0)
+            self.time_step = 0
+            self.current_view = self.view_submodule_data[0][0]
+
+    def get_information(self, delta_time):
+        self.step()
+        return self.current_view.get_information(delta_time)

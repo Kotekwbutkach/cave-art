@@ -2,7 +2,7 @@ from data_structures import Transform, VehicleData, RoadData
 from .vehicle_module import ViewModule, HumanDriverViewModule, ProportionalIntegralViewModule, \
     ControllerModule, IntelligentDriverControllerModule, FollowerStopperControllerModule, \
     ProportionalIntegralControllerModule, \
-    PhysicsModule, VariableControlsControllerModule
+    PhysicsModule, VariableControlsControllerModule, VariableViewsViewModule
 from typing import Dict, List
 
 
@@ -65,13 +65,16 @@ class Vehicle:
         else:
             controller = ControllerModule(**kwargs)
 
-        if kwargs["view_module"] == "HumanDriverView":
+        if kwargs["view_module"] == "VariableViewsView":
+            view = VariableViewsViewModule(*kwargs["view_submodules"])
+        elif kwargs["view_module"] == "HumanDriverView":
             view = HumanDriverViewModule(**kwargs)
         elif kwargs["view_module"] == "ProportionalIntegralView":
             # only compatible with the corresponding controller
             view = ProportionalIntegralViewModule(**kwargs)
         else:
             view = ViewModule(**kwargs)
+
         return Vehicle(road_data, transform, vehicle_length, view, controller, physics)
 
     @staticmethod

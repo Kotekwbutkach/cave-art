@@ -50,7 +50,7 @@ class Simulation:
                                "velocity": 0,
                                "acceleration": 0,
                                "vehicle_length": 5,
-                               "awareness": 5,
+                               "awareness": 4,
                                "max_acceleration": 1,
                                "max_velocity": 36,
                                "minimum_distance": 2,
@@ -74,9 +74,9 @@ class Simulation:
 
         if draw:
             vehicle_plots(sim, sim.name + "_full", end=sim.road.data.age, show=True)
-            vehicle_plots(sim, sim.name + "_pt1", end=2000, show=True)
-            vehicle_plots(sim, sim.name + "_pt2", start=2000, end=4000, show=True)
-            vehicle_plots(sim, sim.name + "_pt3", start=4000, end=6000, show=True)
+            # vehicle_plots(sim, sim.name + "_pt1", end=2000, show=True)
+            # vehicle_plots(sim, sim.name + "_pt2", start=1000, end=2000, show=True)
+            # vehicle_plots(sim, sim.name + "_pt3", start=4000, end=6000, show=True)
 
         if show:
             if circular:
